@@ -21,6 +21,11 @@
 
 ;;; Commentary:
 
+;; Provides the following functions:
+;; yankee/yank-as-gfm-code-block
+;; yankee/yank-as-gfm-code-block-folded
+;; yankee/yank-as-org-code-block
+
 ;;; Code:
 
 (defun yankee/in-project-p ()
@@ -231,12 +236,6 @@ Includes a filename comment annotation."
   (if commit-ref
       (format "%s#%s (%s)" file-name selection-range commit-ref)
     (format "%s#%s" file-name selection-range)))
-
-;; yank selection with line numbers
-(define-key evil-visual-state-map (kbd "gy") nil)
-(define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
-(define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
-(define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
 
 (provide 'yankee)
 ;;; yankee.el ends here
