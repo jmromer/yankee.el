@@ -18,22 +18,6 @@ Currently only supports Git."
 </sup>
 #+END_SRC
 
-```emacs-lisp
-;; yankee.el L158-L163 (ea278931)
-
-(defun yankee/current-commit-ref ()
-  "The current commit's SHA, if under version control.
-Currently only supports Git."
-  (if (equal 'Git (vc-backend (buffer-file-name)))
-      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
-    nil))
-```
-<sup>
-  <a href="https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163">
-    yankee.el#L158-L163 (ea278931)
-  </a>
-</sup>
-
 #+BEGIN_SRC markdown
 <details>
 <summary>yankee/current-commit-ref</summary>
@@ -56,41 +40,8 @@ Currently only supports Git."
 </details>
 #+END_SRC
 
-<details>
-<summary>yankee/current-commit-ref</summary>
-
-```emacs-lisp
-;; yankee.el L158-L163 (ea278931)
-
-(defun yankee/current-commit-ref ()
-  "The current commit's SHA, if under version control.
-Currently only supports Git."
-  (if (equal 'Git (vc-backend (buffer-file-name)))
-      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
-    nil))
-```
-<sup>
-  <a href=https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163">
-    yankee.el#L158-L163 (ea278931)
-  </a>
-</sup>
-</details>
-
 #+BEGIN_SRC org
-  #+BEGIN_SRC emacs-lisp
-  ;; yankee.el L158-L163 (ea278931)
-
-  (defun yankee/current-commit-ref ()
-    "The current commit's SHA, if under version control.
-  Currently only supports Git."
-    (if (equal 'Git (vc-backend (buffer-file-name)))
-        (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
-      nil))
-  #+END_SRC
-  [[https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163][source]]
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
+##+BEGIN_SRC emacs-lisp
 ;; yankee.el L158-L163 (ea278931)
 
 (defun yankee/current-commit-ref ()
@@ -99,5 +50,6 @@ Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
+##+END_SRC
+[ [https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163][source] ]
 #+END_SRC
-[[https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163][source]]
