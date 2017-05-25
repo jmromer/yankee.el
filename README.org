@@ -1,4 +1,24 @@
-* yankee
+* yankee.el
+
+Yankee provides functions for yanking source blocks in Emacs with some helpful
+annotations to help readers gain more context:
+
+- ~yankee/yank-as-gfm-code-block~
+- ~yankee/yank-as-gfm-code-block-folded~
+- ~yankee/yank-as-org-code-block~
+
+Each yanks the selected code block and formats it appropriately: As
+GitHub-flavored Markdown, Foldable GFM, or an Org mode source block.
+
+If the file is in a project, its path relative to the project root will be used
+to annotate the code block with a comment including the selected line numbers.
+(If not in a project, an abbreviated absolute path will be included instead.)
+
+Additionally, if the buffer being yanked from is backed by a file under source
+control, a commit ref will be included.
+
+And lastly, if a VCS remote named ~origin~ is found, a hyperlink to the
+selection, at the correct commit ref, will be included as well.
 
 ** GitHub-flavored Markdown
 
@@ -60,7 +80,7 @@ which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm-fo
 
 ** Org mode
 
-(Intentionally broken here)
+(Intentionally broken here so the raw syntax will render)
 
 #+BEGIN_SRC org
 #+ BEGIN_SRC emacs-lisp
