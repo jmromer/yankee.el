@@ -118,6 +118,10 @@ Currently only supports Git."
 
 ** Demo
 
+#+CAPTION: yankee.el demo
+#+NAME: fig: yankee-demo
+[[https://cloud.githubusercontent.com/assets/4433943/26436253/2afd53f4-40e3-11e7-9791-b671042755d4.gif]]
+
 ** Installation
 
   To install, load yankee.el (the following assumes the project's parent
