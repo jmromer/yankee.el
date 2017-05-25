@@ -24,7 +24,7 @@ which produces
 
 #+CAPTION: yank-as-gfm-code-block
 #+NAME: fig: gfm
-https://cloud.githubusercontent.com/assets/4433943/26434857/271536bc-40d9-11e7-93f9-fe0988975259.png
+[[https://cloud.githubusercontent.com/assets/4433943/26434857/271536bc-40d9-11e7-93f9-fe0988975259.png]]
 
 ** GitHub-flavored Markdown (foldable)
 
@@ -56,9 +56,11 @@ which produces
 
 #+CAPTION: yank-as-gfm-code-block-foldable
 #+NAME: fig: gfm-foldable
-https://cloud.githubusercontent.com/assets/4433943/26434858/271fbf6a-40d9-11e7-91fb-66511c42cdc2.gif
+[[https://cloud.githubusercontent.com/assets/4433943/26434858/271fbf6a-40d9-11e7-91fb-66511c42cdc2.gif]]
 
 ** Org mode
+
+(Intentionally broken here)
 
 #+BEGIN_SRC org
 #+ BEGIN_SRC emacs-lisp
@@ -73,6 +75,8 @@ Currently only supports Git."
 #+ END_SRC
 [[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
 #+END_SRC
+
+which produces
 
 #+BEGIN_SRC emacs-lisp
 ;; yankee.el L158-L163 (517300b3)
