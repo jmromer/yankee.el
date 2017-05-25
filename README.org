@@ -20,7 +20,7 @@ Currently only supports Git."
 </sup>
 #+END_SRC
 
-which produces
+which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm][output]]:
 
 #+CAPTION: yank-as-gfm-code-block
 #+NAME: fig: gfm
@@ -52,7 +52,7 @@ Currently only supports Git."
 </details>
 #+END_SRC
 
-which produces
+which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm-foldable][output]]:
 
 #+CAPTION: yank-as-gfm-code-block-foldable
 #+NAME: fig: gfm-foldable
@@ -76,7 +76,7 @@ Currently only supports Git."
 [[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
 #+END_SRC
 
-which produces
+which produces this output:
 
 #+BEGIN_SRC emacs-lisp
 ;; yankee.el L158-L163 (517300b3)
