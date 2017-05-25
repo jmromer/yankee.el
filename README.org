@@ -7,18 +7,23 @@ annotations to help readers gain more context:
 - ~yankee/yank-as-gfm-code-block-folded~
 - ~yankee/yank-as-org-code-block~
 
-Each yanks the selected code block and formats it appropriately: As
-GitHub-flavored Markdown, Foldable GFM, or an Org mode source block.
+These are especially useful when composing issues and pull/merge requests on
+GitHub / GitLab / Bitbucket, but have broader utility as well.
+
+Each yanks the selected code block and formats it as described by the function
+name: As GitHub-flavored Markdown, Foldable GFM, or an Org mode source block.
 
 If the file is in a project, its path relative to the project root will be used
 to annotate the code block with a comment including the selected line numbers.
 (If not in a project, an abbreviated absolute path will be included instead.)
 
-Additionally, if the buffer being yanked from is backed by a file under source
+Additionally, if the buffer being yanked from is backed by a file under version
 control, a commit ref will be included.
 
 And lastly, if a VCS remote named ~origin~ is found, a hyperlink to the
 selection, at the correct commit ref, will be included as well.
+
+Currently, only Git is supported, but contributions are welcome.
 
 ** GitHub-flavored Markdown
 
@@ -109,3 +114,17 @@ Currently only supports Git."
     nil))
 #+END_SRC
 [[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
+
+** Demo
+
+** Installation
+
+To install, load yankee.el
+
+#+BEGIN_SRC emacs-lisp
+;; home/spacemacs.d/init.el L319-L320 (a1755783)
+
+  (load "yankee/yankee.el")
+  (require 'yankee)
+#+END_SRC
+[[https://github.com/jkrmr/dotfiles/blob/a1755783/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (a1755783)]]
