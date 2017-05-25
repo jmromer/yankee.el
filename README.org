@@ -1,5 +1,7 @@
 * yankee
 
+** GitHub-flavored Markdown
+
 #+BEGIN_SRC markdown
 ```emacs-lisp
 ;; yankee.el L158-L163 (ea278931)
@@ -17,6 +19,16 @@ Currently only supports Git."
   </a>
 </sup>
 #+END_SRC
+
+which produces
+
+#+CAPTION: yank-as-gfm-code-block
+#+NAME: fig: gfm
+https://cloud.githubusercontent.com/assets/4433943/26434857/271536bc-40d9-11e7-93f9-fe0988975259.png
+
+** GitHub-flavored Markdown (foldable)
+
+(The summary line is customizable at runtime)
 
 #+BEGIN_SRC markdown
 <details>
@@ -39,6 +51,14 @@ Currently only supports Git."
 </sup>
 </details>
 #+END_SRC
+
+which produces
+
+#+CAPTION: yank-as-gfm-code-block-foldable
+#+NAME: fig: gfm-foldable
+https://cloud.githubusercontent.com/assets/4433943/26434858/271fbf6a-40d9-11e7-91fb-66511c42cdc2.gif
+
+** Org mode
 
 #+BEGIN_SRC org
 #+ BEGIN_SRC emacs-lisp
