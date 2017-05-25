@@ -28,43 +28,44 @@
 
 ;;; Code:
 
-(defun yankee/in-project-p ()
+;; Logic courtesy of projectile
+(defun yankee--in-project-p ()
   "Check if we're in a project."
   (condition-case nil
-      (yankee/project-root)
+      (yankee--project-root)
     (error nil)))
 
-(defvar yankee/project-root-files
+(defvar yankee--project-root-files
   '(".git" ".hg" ".bzr" "_darcs" ".projectile")
   "A list of files considered to mark the root of a project.")
 
-(defun yankee/expand-file-name (file-name)
+(defun yankee--expand-file-name (file-name)
   "A thin wrapper around `expand-file-name' that handles nil.
 Expand FILE-NAME using `default-directory'."
   (when file-name
     (expand-file-name file-name)))
 
-(defcustom yankee/require-project-root t
+(defcustom yankee--require-project-root t
   "Require the presence of a project root to operate when true.
 Otherwise consider the current directory the project root."
   :group 'yankee
   :type 'boolean)
 
-(defun yankee/project-root ()
+(defun yankee--project-root ()
   "Retrieves the root directory of a project if available.
 The current directory is assumed to be the project's root otherwise."
   (let ((project-root
-         (or (->> yankee/project-root-files
+         (or (->> yankee--project-root-files
                   (--map (locate-dominating-file default-directory it))
                   (-remove #'null)
                   (car)
-                  (yankee/expand-file-name))
-             (if yankee/require-project-root
+                  (yankee--expand-file-name))
+             (if yankee--require-project-root
                  (error "You're not into a project")
                default-directory))))
     project-root))
 
-(defun yankee/git-remote-url (remote-name)
+(defun yankee--git-remote-url (remote-name)
   "Return the url for the remote named REMOTE-NAME."
   (shell-command-to-string
    (format "git remote -v |\
@@ -72,7 +73,7 @@ The current directory is assumed to be the project's root otherwise."
      awk '/fetch/{print $2}' |\
      sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
 
-(defun yankee/selected-lines (start end)
+(defun yankee--selected-lines (start end)
   "Return the selected line numbers bounded by START and END as a string.
 Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
   (interactive "r")
@@ -92,33 +93,33 @@ Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
       start-line-string
     (concat start-line-string "-" end-line-string)))
 
-(defun yankee/path-relative-to-project-root ()
+(defun yankee--path-relative-to-project-root ()
   "The current file's path relative to the project root."
   (interactive)
-  (replace-regexp-in-string (yankee/project-root) ""
+  (replace-regexp-in-string (yankee--project-root) ""
                             (expand-file-name (or (buffer-file-name) ""))))
 
-(defun yankee/abbreviated-project-or-home-path-to-file ()
+(defun yankee--abbreviated-project-or-home-path-to-file ()
   "The path to the current buffer's file.
 If in a project, the path is relative to the project root.
 If not in a project, the path is an abbreviated absolute path."
   (interactive)
-  (if (yankee/in-project-p)
-      (yankee/path-relative-to-project-root)
+  (if (yankee--in-project-p)
+      (yankee--path-relative-to-project-root)
     (abbreviate-file-name (or (buffer-file-name) ""))))
 
-(defun yankee/yank-as-code-block (format start end)
+(defun yankee--yank-as-code-block (format start end)
   "In a FORMAT code fence, yank the visual selection bounded by START and END.
 Includes a filename comment annotation."
   (interactive "r")
   (defvar file-name nil "The current buffer's file name.")
-  (setq file-name (yankee/abbreviated-project-or-home-path-to-file))
+  (setq file-name (yankee--abbreviated-project-or-home-path-to-file))
 
   (defvar commit-ref nil "The current commit reference, if under version control.")
-  (setq commit-ref (yankee/current-commit-ref))
+  (setq commit-ref (yankee--current-commit-ref))
 
   (defvar selection-range nil "The selected line or line numbers ('L-prefixed).")
-  (setq selection-range (yankee/selected-lines start end))
+  (setq selection-range (yankee--selected-lines start end))
 
   (defvar selected-lines nil "The content of the selected line(s).")
   (setq selected-lines (buffer-substring start end))
@@ -140,13 +141,13 @@ Includes a filename comment annotation."
                                "text"))
 
   (defvar snippet-path nil "A path for the selected code, including line numbers and SHA.")
-  (setq snippet-path (yankee/code-snippet-path commit-ref file-name selection-range))
+  (setq snippet-path (yankee--code-snippet-path commit-ref file-name selection-range))
 
   (defvar snippet-url nil "A URL for the selected code, if a remote version exists.")
-  (setq snippet-url (yankee/code-snippet-url (yankee/current-commit-remote)
-                                           commit-ref
-                                           file-name
-                                           selection-range))
+  (setq snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
+                                              commit-ref
+                                              file-name
+                                              selection-range))
 
   (with-temp-buffer
     (funcall mode-atom)
@@ -155,49 +156,31 @@ Includes a filename comment annotation."
     (comment-or-uncomment-region (line-beginning-position) (line-end-position))
 
     (cond ((equal format 'gfm)
-           (yankee/gfm-code-fence language-mode selected-lines snippet-path snippet-url))
+           (yankee--gfm-code-fence language-mode selected-lines snippet-path snippet-url))
           ((equal format 'gfm-folded)
-           (yankee/gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
+           (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
           ((equal format 'org)
-           (yankee/org-code-fence language-mode selected-lines snippet-path snippet-url)))
+           (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
     (clipboard-kill-ring-save (point-min) (point-max))))
 
-(defun yankee/current-commit-ref ()
+(defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
 Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
 
-(defun yankee/current-commit-remote ()
+(defun yankee--current-commit-remote ()
   "The current commit's remote URL, if under version control with a remote set.
 Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (let ((remote-url (replace-regexp-in-string
                          "\n$" ""
-                         (yankee/git-remote-url "origin"))))
+                         (yankee--git-remote-url "origin"))))
         (and (string-match-p "http" remote-url) remote-url))
     nil))
 
-(defun yankee/yank-as-gfm-code-block (start end)
-  "In a GFM code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee/yank-as-code-block 'gfm start end))
-
-(defun yankee/yank-as-gfm-code-block-folded (start end)
-  "In a foldable GFM code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee/yank-as-code-block 'gfm-folded start end))
-
-(defun yankee/yank-as-org-code-block (start end)
-  "In an Org mode code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee/yank-as-code-block 'org start end))
-
-(defun yankee/gfm-code-fence (language code path url)
+(defun yankee--gfm-code-fence (language code path url)
   "Create a GFM code block with LANGUAGE block containing CODE, PATH, and URL."
   (goto-char (point-min))
   (insert "```" language "\n")
@@ -205,7 +188,7 @@ Includes a filename comment annotation."
   (insert "\n\n" code "```\n")
   (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n" url path))))
 
-(defun yankee/gfm-code-fence-folded (language code path url)
+(defun yankee--gfm-code-fence-folded (language code path url)
   "Create a foldable GFM code block with LANGUAGE block containing CODE, PATH, and URL."
   (goto-char (point-min))
   (insert "<details>\n")
@@ -218,7 +201,7 @@ Includes a filename comment annotation."
   (and url (insert (format "<sup>\n  <a href=%s\">\n    %s\n  </a>\n</sup>\n" url path)))
   (insert "</details>"))
 
-(defun yankee/org-code-fence (language code path url)
+(defun yankee--org-code-fence (language code path url)
   "Create an Org code block with LANGUAGE annotation containing CODE, PATH, and URL."
   (goto-char (point-min))
   (insert "#+BEGIN_SRC" " " language "\n")
@@ -226,7 +209,7 @@ Includes a filename comment annotation."
   (insert "\n\n" code "#+END_SRC\n")
   (and url (insert (format "[[%s][%s]]" url path))))
 
-(defun yankee/code-snippet-url (commit-remote commit-ref file-name selection-range)
+(defun yankee--code-snippet-url (commit-remote commit-ref file-name selection-range)
   "Generate the snippet url from COMMIT-REMOTE, COMMIT-REF, FILE-NAME, and the SELECTION-RANGE."
   (and commit-remote
        commit-ref
@@ -238,11 +221,30 @@ Includes a filename comment annotation."
                file-name
                selection-range)))
 
-(defun yankee/code-snippet-path (commit-ref file-name selection-range)
+(defun yankee--code-snippet-path (commit-ref file-name selection-range)
   "Generate the snippet path from COMMIT-REF, FILE-NAME, and the SELECTION-RANGE."
   (if commit-ref
       (format "%s#%s (%s)" file-name selection-range commit-ref)
     (format "%s#%s" file-name selection-range)))
+
+
+(defun yankee/yank-as-gfm-code-block (start end)
+  "In a GFM code fence, yank the selection bounded by START and END.
+Includes a filename comment annotation."
+  (interactive "r")
+  (yankee--yank-as-code-block 'gfm start end))
+
+(defun yankee/yank-as-gfm-code-block-folded (start end)
+  "In a foldable GFM code fence, yank the selection bounded by START and END.
+Includes a filename comment annotation."
+  (interactive "r")
+  (yankee--yank-as-code-block 'gfm-folded start end))
+
+(defun yankee/yank-as-org-code-block (start end)
+  "In an Org mode code fence, yank the selection bounded by START and END.
+Includes a filename comment annotation."
+  (interactive "r")
+  (yankee--yank-as-code-block 'org start end))
 
 (provide 'yankee)
 ;;; yankee.el ends here
