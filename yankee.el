@@ -64,6 +64,13 @@ The current directory is assumed to be the project's root otherwise."
                default-directory))))
     project-root))
 
+(defun yankee/git-remote-url (remote-name)
+  "Return the url for the remote named REMOTE-NAME."
+  (shell-command-to-string
+   (format "git remote -v |\
+     grep %s |\
+     awk '/fetch/{print $2}' |\
+     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
 
 (defun yankee/selected-lines (start end)
   "Return the selected line numbers bounded by START and END as a string.
@@ -168,7 +175,7 @@ Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (let ((remote-url (replace-regexp-in-string
                          "\n$" ""
-                         (shell-command-to-string "git remote-origin-url"))))
+                         (yankee/git-remote-url "origin"))))
         (and (string-match-p "http" remote-url) remote-url))
     nil))
 
