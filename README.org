@@ -119,12 +119,27 @@ Currently only supports Git."
 
 ** Installation
 
-To install, load yankee.el
+  To install, load yankee.el (the following assumes the projectory's parent
+  directory has been added to the ~load-path~):
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L319-L320 (a1755783)
+;; home/spacemacs.d/init.el L319-L320 (8b3c0dcd)
 
-  (load "yankee/yankee.el")
+  (load "yankee.el/yankee.el")
   (require 'yankee)
 #+END_SRC
-[[https://github.com/jkrmr/dotfiles/blob/a1755783/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (a1755783)]]
+[[https://github.com/jkrmr/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (8b3c0dcd)]]
+
+*** Suggested keybindings for evil-mode
+
+    Spacemacs and Evil-mode users may find the following key bindings intuitive:
+
+#+BEGIN_SRC emacs-lisp
+;; home/spacemacs.d/init.el L321-L324 (8b3c0dcd)
+
+  (define-key evil-visual-state-map (kbd "gy") nil)
+  (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
+  (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
+  (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
+#+END_SRC
+[[https://github.com/jkrmr/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
