@@ -152,7 +152,7 @@ Includes a filename comment annotation."
           ((equal format 'gfm-folded)
            (yankee/gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
           ((equal format 'org)
-           (yankee/org-code-fence language-mode selected-lines snippet-url)))
+           (yankee/org-code-fence language-mode selected-lines snippet-path snippet-url)))
     (clipboard-kill-ring-save (point-min) (point-max))))
 
 (defun yankee/current-commit-ref ()
@@ -211,13 +211,13 @@ Includes a filename comment annotation."
   (and url (insert (format "<sup>\n  <a href=%s\">\n    %s\n  </a>\n</sup>\n" url path)))
   (insert "</details>"))
 
-(defun yankee/org-code-fence (language code url)
-  "Create an Org code block with LANGUAGE annotation containing CODE and URL."
+(defun yankee/org-code-fence (language code path url)
+  "Create an Org code block with LANGUAGE annotation containing CODE, PATH, and URL."
   (goto-char (point-min))
   (insert "#+BEGIN_SRC" " " language "\n")
   (goto-char (point-max))
   (insert "\n\n" code "#+END_SRC\n")
-  (and url (insert (format "[[%s][source]]" url))))
+  (and url (insert (format "[[%s][%s]]" url path))))
 
 (defun yankee/code-snippet-url (commit-remote commit-ref file-name selection-range)
   "Generate the snippet url from COMMIT-REMOTE, COMMIT-REF, FILE-NAME, and the SELECTION-RANGE."
