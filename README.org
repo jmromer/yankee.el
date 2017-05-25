@@ -10,8 +10,9 @@ annotations to help readers gain more context:
 These are especially useful when composing issues and pull/merge requests on
 GitHub / GitLab / Bitbucket, but have broader utility as well.
 
-Each yanks the selected code block and formats it as described by the function
-name: As GitHub-flavored Markdown, Foldable GFM, or an Org mode source block.
+Each function yanks the selected code block and formats it as described by the
+function name: As GitHub-flavored Markdown, Foldable GFM, or an Org mode source
+block.
 
 If the file is in a project, its path relative to the project root will be used
 to annotate the code block with a comment including the selected line numbers.
