@@ -126,7 +126,7 @@ Currently only supports Git."
 
 ** Installation
 
-  To install, load yankee.el and require ~\'yankee~ (the following assumes the
+  To install, load yankee.el and require ~yankee~ (the following assumes the
   project's parent directory has been added to the ~load-path~):
 
 #+BEGIN_SRC emacs-lisp
