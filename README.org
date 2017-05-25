@@ -1,1 +1,152 @@
-* yankee
+* yankee.el
+
+Yankee provides functions for yanking source blocks in Emacs with some helpful
+annotations to help readers gain more context:
+
+- ~yankee/yank-as-gfm-code-block~
+- ~yankee/yank-as-gfm-code-block-folded~
+- ~yankee/yank-as-org-code-block~
+
+These are especially useful when composing issues and pull/merge requests on
+GitHub / GitLab / Bitbucket, but have broader utility as well.
+
+Each function yanks the selected code block and formats it as described by the
+function name: As GitHub-flavored Markdown, Foldable GFM, or an Org mode source
+block.
+
+If the file is in a project, its path relative to the project root will be used
+to annotate the code block with a comment including the selected line numbers.
+(If not in a project, an abbreviated absolute path will be included instead.)
+
+Additionally, if the buffer being yanked from is backed by a file under version
+control, a commit ref will be included.
+
+And lastly, if a VCS remote named ~origin~ is found, a hyperlink to the
+selection, at the correct commit ref, will be included as well.
+
+Currently, only Git is supported, but contributions are welcome.
+
+** GitHub-flavored Markdown
+
+#+BEGIN_SRC markdown
+```emacs-lisp
+;; yankee.el L158-L163 (ea278931)
+
+(defun yankee/current-commit-ref ()
+  "The current commit's SHA, if under version control.
+Currently only supports Git."
+  (if (equal 'Git (vc-backend (buffer-file-name)))
+      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
+    nil))
+```
+<sup>
+  <a href="https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163">
+    yankee.el#L158-L163 (ea278931)
+  </a>
+</sup>
+#+END_SRC
+
+which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm][output]]:
+
+#+CAPTION: yank-as-gfm-code-block
+#+NAME: fig: gfm
+[[https://cloud.githubusercontent.com/assets/4433943/26434857/271536bc-40d9-11e7-93f9-fe0988975259.png]]
+
+** GitHub-flavored Markdown (foldable)
+
+(The summary line is customizable at runtime)
+
+#+BEGIN_SRC markdown
+<details>
+<summary>yankee/current-commit-ref</summary>
+
+```emacs-lisp
+;; yankee.el L158-L163 (ea278931)
+
+(defun yankee/current-commit-ref ()
+  "The current commit's SHA, if under version control.
+Currently only supports Git."
+  (if (equal 'Git (vc-backend (buffer-file-name)))
+      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
+    nil))
+```
+<sup>
+  <a href=https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163">
+    yankee.el#L158-L163 (ea278931)
+  </a>
+</sup>
+</details>
+#+END_SRC
+
+which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm-foldable][output]]:
+
+#+CAPTION: yank-as-gfm-code-block-foldable
+#+NAME: fig: gfm-foldable
+[[https://cloud.githubusercontent.com/assets/4433943/26434858/271fbf6a-40d9-11e7-91fb-66511c42cdc2.gif]]
+
+** Org mode
+
+(Intentionally broken here so the raw syntax will render)
+
+#+BEGIN_SRC org
+#+ BEGIN_SRC emacs-lisp
+;; yankee.el L158-L163 (517300b3)
+
+(defun yankee/current-commit-ref ()
+  "The current commit's SHA, if under version control.
+Currently only supports Git."
+  (if (equal 'Git (vc-backend (buffer-file-name)))
+      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
+    nil))
+#+ END_SRC
+[[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
+#+END_SRC
+
+which produces this output:
+
+#+BEGIN_SRC emacs-lisp
+;; yankee.el L158-L163 (517300b3)
+
+(defun yankee/current-commit-ref ()
+  "The current commit's SHA, if under version control.
+Currently only supports Git."
+  (if (equal 'Git (vc-backend (buffer-file-name)))
+      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
+    nil))
+#+END_SRC
+[[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
+
+** Demo
+
+(Click to view animated)
+
+#+CAPTION: yankee.el demo
+#+NAME: fig: yankee-demo
+[[https://cloud.githubusercontent.com/assets/4433943/26436253/2afd53f4-40e3-11e7-9791-b671042755d4.gif]]
+
+** Installation
+
+  To install, load yankee.el and require ~yankee~ (the following assumes the
+  project's parent directory has been added to the ~load-path~):
+
+#+BEGIN_SRC emacs-lisp
+;; home/spacemacs.d/init.el L319-L320 (8b3c0dcd)
+
+  (load "yankee.el/yankee.el")
+  (require 'yankee)
+#+END_SRC
+[[https://github.com/jkrmr/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (8b3c0dcd)]]
+
+*** Suggested keybindings for evil-mode
+
+    Spacemacs and Evil-mode users may find the following key bindings intuitive:
+
+#+BEGIN_SRC emacs-lisp
+;; home/spacemacs.d/init.el L321-L324 (8b3c0dcd)
+
+  (define-key evil-visual-state-map (kbd "gy") nil)
+  (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
+  (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
+  (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
+#+END_SRC
+[[https://github.com/jkrmr/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
