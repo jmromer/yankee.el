@@ -119,7 +119,7 @@ Currently only supports Git."
 
 ** Installation
 
-  To install, load yankee.el (the following assumes the projectory's parent
+  To install, load yankee.el (the following assumes the project's parent
   directory has been added to the ~load-path~):
 
 #+BEGIN_SRC emacs-lisp
