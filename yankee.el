@@ -166,19 +166,17 @@ Includes a filename comment annotation."
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
 Currently only supports Git."
-  (if (equal 'Git (vc-backend (buffer-file-name)))
-      (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
-    nil))
+  (when (eq 'Git (vc-backend (buffer-file-name)))
+    (substring (shell-command-to-string "git rev-parse HEAD") 0 8)))
 
 (defun yankee--current-commit-remote ()
   "The current commit's remote URL, if under version control with a remote set.
 Currently only supports Git."
-  (if (equal 'Git (vc-backend (buffer-file-name)))
+  (when (eq 'Git (vc-backend (buffer-file-name)))
       (let ((remote-url (replace-regexp-in-string
                          "\n$" ""
                          (yankee--git-remote-url "origin"))))
-        (and (string-match-p "http" remote-url) remote-url))
-    nil))
+        (and (string-match-p "http" remote-url) remote-url))))
 
 (defun yankee--gfm-code-fence (language code path url)
   "Create a GFM code block with LANGUAGE block containing CODE, PATH, and URL."
