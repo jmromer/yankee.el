@@ -184,7 +184,7 @@ Currently only supports Git."
   (insert "```" language "\n")
   (goto-char (point-max))
   (insert "\n\n" code "```\n")
-  (and url (insert (format "<sup>\n  <a href=%s\">\n    %s\n  </a>\n</sup>\n" url path)))
+  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n" url path)))
   (insert "</details>"))
 
 (defun yankee--org-code-fence (language code path url)
