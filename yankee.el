@@ -77,21 +77,19 @@ The current directory is assumed to be the project's root otherwise."
   "Return the selected line numbers bounded by START and END as a string.
 Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
   (interactive "r")
-  (defvar start-line nil "The line number at the start position, as an integer.")
-  (setq start-line (line-number-at-pos start))
 
-  (defvar end-line nil "The line number at the end position, as an integer.")
-  (setq end-line (line-number-at-pos (- end 1)))
+  (let ((start-line (line-number-at-pos start))
+        ;; The line number at the start position, as an integer.
+        (end-line (line-number-at-pos (- end 1)))
+        ;; The line number at the end position, as an integer.
+        (start-line-string (concat "L" (number-to-string start-line)))
+        ;; The start line as a string. Example: 'L5'.
+        (end-line-string (concat "L" (number-to-string end-line))))
+        ;; The end line as a string. Example: 'L10'.
 
-  (defvar start-line-string nil "The start line as a string. Example: 'L5'.")
-  (setq start-line-string (concat "L" (number-to-string start-line)))
-
-  (defvar end-line-string nil "The end line as a string. Example: 'L10'.")
-  (setq end-line-string (concat "L" (number-to-string end-line)))
-
-  (if (= 0 (- end-line start-line))
-      start-line-string
-    (concat start-line-string "-" end-line-string)))
+    (if (= 0 (- end-line start-line))
+        start-line-string
+      (concat start-line-string "-" end-line-string))))
 
 (defun yankee--path-relative-to-project-root ()
   "The current file's path relative to the project root."
