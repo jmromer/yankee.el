@@ -78,14 +78,14 @@ The current directory is assumed to be the project's root otherwise."
 Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
   (interactive "r")
 
-  (let ((start-line (line-number-at-pos start))
-        ;; The line number at the start position, as an integer.
-        (end-line (line-number-at-pos (- end 1)))
-        ;; The line number at the end position, as an integer.
-        (start-line-string (concat "L" (number-to-string start-line)))
-        ;; The start line as a string. Example: 'L5'.
-        (end-line-string (concat "L" (number-to-string end-line))))
-        ;; The end line as a string. Example: 'L10'.
+  (let* (;; The line number at the start position, as an integer.
+         (start-line (line-number-at-pos start))
+         ;; The line number at the end position, as an integer.
+         (end-line (line-number-at-pos (- end 1)))
+         ;; The start line as a string. Example: 'L5'.
+         (start-line-string (concat "L" (number-to-string start-line)))
+         ;; The end line as a string. Example: 'L10'.
+         (end-line-string (concat "L" (number-to-string end-line))))
 
     (if (= 0 (- end-line start-line))
         start-line-string
@@ -110,56 +110,46 @@ If not in a project, the path is an abbreviated absolute path."
   "In a FORMAT code fence, yank the visual selection bounded by START and END.
 Includes a filename comment annotation."
   (interactive "r")
-  (defvar file-name nil "The current buffer's file name.")
-  (setq file-name (yankee--abbreviated-project-or-home-path-to-file))
 
-  (defvar commit-ref nil "The current commit reference, if under version control.")
-  (setq commit-ref (yankee--current-commit-ref))
 
-  (defvar selection-range nil "The selected line or line numbers ('L-prefixed).")
-  (setq selection-range (yankee--selected-lines start end))
+  (let* (;; The current buffer's file name.
+         (file-name (yankee--abbreviated-project-or-home-path-to-file))
+         ;; The current commit reference, if under version control.
+         (commit-ref (yankee--current-commit-ref))
+         ;; The selected line or line numbers ('L-prefixed).
+         (selection-range (yankee--selected-lines start end))
+         ;; The content of the selected line(s).
+         (selected-lines (buffer-substring start end))
+         ;; The current buffer's major mode.
+         (mode-name (buffer-local-value 'major-mode (current-buffer)))
+         ;; The current buffer's major mode as a string.
+         (mode-string (format "%s" (or mode-name "")))
+         ;; The current buffer's major mode as an atom.
+         (mode-atom (intern mode-string))
+         ;; The language, as derived from the major mode.
+         (language-mode (replace-regexp-in-string "-mode$" "" mode-string))
+         ;; The language, taken from the file extension.
+         ;; (language-extension (or (file-name-extension (or (buffer-file-name) "")) "text"))
+         ;; A path for the selected code, including line numbers and SHA.
+         (snippet-path (yankee--code-snippet-path commit-ref file-name selection-range))
+         ;; A URL for the selected code, if a remote version exists.
+         (snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
+                                                commit-ref
+                                                file-name
+                                                selection-range)))
+    (with-temp-buffer
+      (funcall mode-atom)
+      (insert file-name " " selection-range
+              (if commit-ref (format " (%s)" commit-ref) ""))
+      (comment-or-uncomment-region (line-beginning-position) (line-end-position))
 
-  (defvar selected-lines nil "The content of the selected line(s).")
-  (setq selected-lines (buffer-substring start end))
-
-  (defvar mode-name nil "The current buffer's major mode.")
-  (setq mode-name (buffer-local-value 'major-mode (current-buffer)))
-
-  (defvar mode-string "" "The current buffer's major mode as a string.")
-  (setq mode-string (format "%s" (or mode-name "")))
-
-  (defvar mode-atom nil "The current buffer's major mode as an atom.")
-  (setq mode-atom (intern mode-string))
-
-  (defvar language-mode "" "The language, as derived from the major mode.")
-  (setq language-mode (replace-regexp-in-string "-mode$" "" mode-string))
-
-  (defvar language-extension "" "The language, taken from the file extension.")
-  (setq language-extension (or (file-name-extension (or (buffer-file-name) ""))
-                               "text"))
-
-  (defvar snippet-path nil "A path for the selected code, including line numbers and SHA.")
-  (setq snippet-path (yankee--code-snippet-path commit-ref file-name selection-range))
-
-  (defvar snippet-url nil "A URL for the selected code, if a remote version exists.")
-  (setq snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
-                                              commit-ref
-                                              file-name
-                                              selection-range))
-
-  (with-temp-buffer
-    (funcall mode-atom)
-    (insert file-name " " selection-range
-            (if commit-ref (format " (%s)" commit-ref) ""))
-    (comment-or-uncomment-region (line-beginning-position) (line-end-position))
-
-    (cond ((equal format 'gfm)
-           (yankee--gfm-code-fence language-mode selected-lines snippet-path snippet-url))
-          ((equal format 'gfm-folded)
-           (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
-          ((equal format 'org)
-           (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
-    (clipboard-kill-ring-save (point-min) (point-max))))
+      (cond ((equal format 'gfm)
+             (yankee--gfm-code-fence language-mode selected-lines snippet-path snippet-url))
+            ((equal format 'gfm-folded)
+             (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
+            ((equal format 'org)
+             (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
+      (clipboard-kill-ring-save (point-min) (point-max)))))
 
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
