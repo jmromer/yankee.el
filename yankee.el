@@ -111,7 +111,6 @@ If not in a project, the path is an abbreviated absolute path."
 Includes a filename comment annotation."
   (interactive "r")
 
-
   (let* (;; The current buffer's file name.
          (file-name (yankee--abbreviated-project-or-home-path-to-file))
          ;; The current commit reference, if under version control.
