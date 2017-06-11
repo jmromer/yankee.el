@@ -122,13 +122,11 @@ Includes a filename comment annotation."
          ;; The current buffer's major mode.
          (mode-name (buffer-local-value 'major-mode (current-buffer)))
          ;; The current buffer's major mode as a string.
-         (mode-string (format "%s" (or mode-name "")))
+         (mode-string (format "%s" (or mode-name "text")))
          ;; The current buffer's major mode as an atom.
          (mode-atom (intern mode-string))
          ;; The language, as derived from the major mode.
-         (language-mode (replace-regexp-in-string "-mode$" "" mode-string))
-         ;; The language, taken from the file extension.
-         ;; (language-extension (or (file-name-extension (or (buffer-file-name) "")) "text"))
+         (language-mode (yankee--current-buffer-language mode-string))
          ;; A path for the selected code, including line numbers and SHA.
          (snippet-path (yankee--code-snippet-path commit-ref file-name selection-range))
          ;; A URL for the selected code, if a remote version exists.
@@ -149,6 +147,14 @@ Includes a filename comment annotation."
             ((equal format 'org)
              (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
       (clipboard-kill-ring-save (point-min) (point-max)))))
+
+(defun yankee--current-buffer-language (mode-string)
+  "The language used in the current buffer, extracted from the major MODE-STRING.
+Intended for use in code block. Corner cases are mapped to strings GFM / Org can
+understand."
+  (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
+    (cond ((equal language "tuareg") "ocaml")
+          (t language))))
 
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
