@@ -133,7 +133,15 @@ Includes a filename comment annotation."
          (snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
                                                 commit-ref
                                                 file-name
-                                                selection-range)))
+                                                selection-range))
+         ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
+         (mode-hook-atom (intern (format "%s-hook" mode-string)))
+         ;; Store any mode hooks
+         (original-mode-hooks (format "%s" (eval `,mode-hook-atom))))
+
+    ;; disable any major mode hooks for the current mode
+    (eval `(setq ,mode-hook-atom nil))
+
     (with-temp-buffer
       (funcall mode-atom)
       (insert file-name " " selection-range
@@ -146,7 +154,10 @@ Includes a filename comment annotation."
              (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
             ((equal format 'org)
              (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
-      (clipboard-kill-ring-save (point-min) (point-max)))))
+      (clipboard-kill-ring-save (point-min) (point-max)))
+
+    ;; re-enable the current major mode's hooks
+    (eval `(setq ,mode-hook-atom ,original-mode-hooks))))
 
 (defun yankee--current-buffer-language (mode-string)
   "The language used in the current buffer, extracted from the major MODE-STRING.
