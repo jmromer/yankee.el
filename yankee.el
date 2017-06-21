@@ -111,7 +111,6 @@ If not in a project, the path is an abbreviated absolute path."
 Includes a filename comment annotation."
   (interactive "r")
 
-
   (let* (;; The current buffer's file name.
          (file-name (yankee--abbreviated-project-or-home-path-to-file))
          ;; The current commit reference, if under version control.
@@ -123,20 +122,26 @@ Includes a filename comment annotation."
          ;; The current buffer's major mode.
          (mode-name (buffer-local-value 'major-mode (current-buffer)))
          ;; The current buffer's major mode as a string.
-         (mode-string (format "%s" (or mode-name "")))
+         (mode-string (format "%s" (or mode-name "text")))
          ;; The current buffer's major mode as an atom.
          (mode-atom (intern mode-string))
          ;; The language, as derived from the major mode.
-         (language-mode (replace-regexp-in-string "-mode$" "" mode-string))
-         ;; The language, taken from the file extension.
-         ;; (language-extension (or (file-name-extension (or (buffer-file-name) "")) "text"))
+         (language-mode (yankee--current-buffer-language mode-string))
          ;; A path for the selected code, including line numbers and SHA.
          (snippet-path (yankee--code-snippet-path commit-ref file-name selection-range))
          ;; A URL for the selected code, if a remote version exists.
          (snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
                                                 commit-ref
                                                 file-name
-                                                selection-range)))
+                                                selection-range))
+         ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
+         (mode-hook-atom (intern (format "%s-hook" mode-string)))
+         ;; Store any mode hooks
+         (original-mode-hooks (format "%s" (eval `,mode-hook-atom))))
+
+    ;; disable any major mode hooks for the current mode
+    (eval `(setq ,mode-hook-atom nil))
+
     (with-temp-buffer
       (funcall mode-atom)
       (insert file-name " " selection-range
@@ -149,7 +154,18 @@ Includes a filename comment annotation."
              (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
             ((equal format 'org)
              (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
-      (clipboard-kill-ring-save (point-min) (point-max)))))
+      (clipboard-kill-ring-save (point-min) (point-max)))
+
+    ;; re-enable the current major mode's hooks
+    (eval `(setq ,mode-hook-atom ,original-mode-hooks))))
+
+(defun yankee--current-buffer-language (mode-string)
+  "The language used in the current buffer, extracted from the major MODE-STRING.
+Intended for use in code block. Corner cases are mapped to strings GFM / Org can
+understand."
+  (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
+    (cond ((equal language "tuareg") "ocaml")
+          (t language))))
 
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
