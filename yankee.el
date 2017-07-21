@@ -165,6 +165,7 @@ Intended for use in code block. Corner cases are mapped to strings GFM / Org can
 understand."
   (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
     (cond ((equal language "tuareg") "ocaml")
+          ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
           (t language))))
 
 (defun yankee--current-commit-ref ()
