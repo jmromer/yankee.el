@@ -189,7 +189,7 @@ Currently only supports Git."
   (insert "```" language "\n")
   (goto-char (point-max))
   (insert "\n\n" code "```\n")
-  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n" url path))))
+  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" url path))))
 
 (defun yankee--gfm-code-fence-folded (language code path url)
   "Create a foldable GFM code block with LANGUAGE block containing CODE, PATH, and URL."
@@ -201,7 +201,7 @@ Currently only supports Git."
   (insert "```" language "\n")
   (goto-char (point-max))
   (insert "\n\n" code "```\n")
-  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n" url path)))
+  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" url path)))
   (insert "</details>"))
 
 (defun yankee--org-code-fence (language code path url)
