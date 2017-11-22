@@ -172,7 +172,7 @@ understand."
   "The current commit's SHA, if under version control.
 Currently only supports Git."
   (when (eq 'Git (vc-backend (buffer-file-name)))
-    (substring (shell-command-to-string "git rev-parse HEAD") 0 8)))
+    (substring (shell-command-to-string "git rev-parse HEAD") 0 10)))
 
 (defun yankee--current-commit-remote ()
   "The current commit's remote URL, if under version control with a remote set.
