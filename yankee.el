@@ -73,6 +73,12 @@ The current directory is assumed to be the project's root otherwise."
      awk '/fetch/{print $2}' |\
      sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
 
+(defun yankee--mode-string (modename)
+  "Return the current buffer's major mode, MODENAME, as a string."
+  (cond ((string= modename nil) "text-mode")
+        ((string= modename "fundamental-mode") "text-mode")
+        (t (format "%s" modename))))
+
 (defun yankee--selected-lines (start end)
   "Return the selected line numbers bounded by START and END as a string.
 Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
