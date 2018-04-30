@@ -73,6 +73,12 @@ The current directory is assumed to be the project's root otherwise."
      awk '/fetch/{print $2}' |\
      sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
 
+(defun yankee--mode-string (modename)
+  "Return the current buffer's major mode, MODENAME, as a string."
+  (cond ((string= modename nil) "text-mode")
+        ((string= modename "fundamental-mode") "text-mode")
+        (t (format "%s" modename))))
+
 (defun yankee--selected-lines (start end)
   "Return the selected line numbers bounded by START and END as a string.
 Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
@@ -122,7 +128,7 @@ Includes a filename comment annotation."
          ;; The current buffer's major mode.
          (mode-name (buffer-local-value 'major-mode (current-buffer)))
          ;; The current buffer's major mode as a string.
-         (mode-string (format "%s" (or mode-name "text")))
+         (mode-string (yankee--mode-string mode-name))
          ;; The current buffer's major mode as an atom.
          (mode-atom (intern mode-string))
          ;; The language, as derived from the major mode.
@@ -160,11 +166,11 @@ Includes a filename comment annotation."
     (eval `(setq ,mode-hook-atom ,original-mode-hooks))))
 
 (defun yankee--current-buffer-language (mode-string)
-  "The language used in the current buffer, extracted from the major MODE-STRING.
+  "The language used in the current buffer, inferred from the major MODE-STRING.
 Intended for use in code block. Corner cases are mapped to strings GFM / Org can
 understand."
   (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
-    (cond ((equal language "tuareg") "ocaml")
+    (cond ((string= language "tuareg") "ocaml")
           ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
           (t language))))
 
