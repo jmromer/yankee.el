@@ -159,6 +159,8 @@ Includes a filename comment annotation."
              (yankee--gfm-code-fence language-mode selected-lines snippet-path snippet-url))
             ((equal format 'gfm-folded)
              (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
+            ((equal format 'jira)
+             (yankee--jira-code-fence language-mode selected-lines snippet-path snippet-url))
             ((equal format 'org)
              (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
       (clipboard-kill-ring-save (point-min) (point-max)))
@@ -218,6 +220,14 @@ Currently only supports Git."
   (goto-char (point-max))
   (insert "\n\n" code "#+END_SRC\n")
   (and url (insert (format "[[%s][%s]]" url path))))
+
+(defun yankee--jira-code-fence (language code path url)
+  "Create a Jira code block with LANGUAGE annotation containing CODE, PATH, and URL."
+  (goto-char (point-min))
+  (insert "{code:" language "}" "\n")
+  (goto-char (point-max))
+  (insert "\n\n" code "\{code\}\n\n")
+  (and url (insert (format "[%s|%s]" path url))))
 
 (defun yankee--code-snippet-url (commit-remote commit-ref file-name selection-range start-line)
   "Generate the snippet url in the appropriate format depending on the service.
@@ -281,6 +291,12 @@ Includes a filename comment annotation."
 Includes a filename comment annotation."
   (interactive "r")
   (yankee--yank-as-code-block 'org start end))
+
+(defun yankee/yank-as-jira-code-block (start end)
+  "In a Jira code fence, yank the selection bounded by START and END.
+Includes a filename comment annotation."
+  (interactive "r")
+  (yankee--yank-as-code-block 'jira start end))
 
 (provide 'yankee)
 ;;; yankee.el ends here
