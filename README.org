@@ -172,5 +172,6 @@ which renders as follows:
   (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
   (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
   (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
+  (define-key evil-visual-state-map (kbd "gyj") #'yankee/yank-as-jira-code-block)
 #+END_SRC
 [[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
