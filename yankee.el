@@ -128,7 +128,7 @@ Includes a filename comment annotation."
          ;; The current buffer's major mode.
          (mode-name (buffer-local-value 'major-mode (current-buffer)))
          ;; The current buffer's major mode as a string.
-         (mode-string (format "%s" (or mode-name "text")))
+         (mode-string (yankee--mode-string mode-name))
          ;; The current buffer's major mode as an atom.
          (mode-atom (intern mode-string))
          ;; The language, as derived from the major mode.
