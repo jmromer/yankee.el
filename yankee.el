@@ -139,7 +139,8 @@ Includes a filename comment annotation."
          (snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
                                                 commit-ref
                                                 file-name
-                                                selection-range))
+                                                selection-range
+                                                (line-number-at-pos start)))
          ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
          (mode-hook-atom (intern (format "%s-hook" mode-string)))
          ;; Store any mode hooks
@@ -195,7 +196,7 @@ Currently only supports Git."
   (insert "```" language "\n")
   (goto-char (point-max))
   (insert "\n\n" code "```\n")
-  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" url path))))
+  (and url (insert (yankee--hyperlink-to-patch url path))))
 
 (defun yankee--gfm-code-fence-folded (language code path url)
   "Create a foldable GFM code block with LANGUAGE block containing CODE, PATH, and URL."
@@ -218,20 +219,48 @@ Currently only supports Git."
   (insert "\n\n" code "#+END_SRC\n")
   (and url (insert (format "[[%s][%s]]" url path))))
 
-(defun yankee--code-snippet-url (commit-remote commit-ref file-name selection-range)
-  "Generate the snippet url from COMMIT-REMOTE, COMMIT-REF, FILE-NAME, and the SELECTION-RANGE."
-  (and commit-remote
-       commit-ref
-       file-name
-       selection-range
-       (format "%s/blob/%s/%s#%s"
-               commit-remote
-               commit-ref
-               file-name
-               selection-range)))
+(defun yankee--code-snippet-url (commit-remote commit-ref file-name selection-range start-line)
+  "Generate the snippet url in the appropriate format depending on the service.
+Supports GitHub and BitBucket.
+
+Examples:
+COMMIT-REMOTE: https://github.com/orgname/reponame/file.py
+COMMIT-REF: 105561ec24
+FILE-NAME: file.py
+SELECTION-RANGE: L4-L8
+START-LINE: 4"
+  (if commit-remote
+      (cond
+       ;; GitHub URL format
+       ((string-match "github.com" commit-remote)
+        (and commit-ref file-name selection-range
+             (format "%s/blob/%s/%s#%s" commit-remote commit-ref file-name selection-range)))
+
+       ;; BitBucket URL format
+       ((string-match "bitbucket.org" commit-remote)
+        (and commit-ref file-name start-line
+             (format "%s/src/%s/%s#%s-%s" commit-remote commit-ref file-name file-name start-line))))))
+
+(defun yankee--hyperlink-to-patch (href-url text-path)
+  "Generate the hyperlink to the yanked patch in the appropriate format.
+Supports GitHub and BitBucket. HREF-URL becomes the href attribute,
+TEXT-PATH the anchor tag text."
+  (cond
+   ;;GitHub: Use HTML, display smaller
+   ((string-match "github.com" href-url)
+    (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" href-url text-path))
+
+   ;; BitBucket: Use Markdown
+   ((string-match "bitbucket.org" href-url)
+    (format "\n\n[%s](%s)" text-path href-url))))
+
 
 (defun yankee--code-snippet-path (commit-ref file-name selection-range)
-  "Generate the snippet path from COMMIT-REF, FILE-NAME, and the SELECTION-RANGE."
+  "Generate the snippet path. Displayed as the patch's hyperlink text.
+Examples:
+COMMIT-REF: 105561ec24
+FILE-NAME: appointments.py
+SELECTION-RANGE: L4-L5"
   (if commit-ref
       (format "%s#%s (%s)" file-name selection-range commit-ref)
     (format "%s#%s" file-name selection-range)))
