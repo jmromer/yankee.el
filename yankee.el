@@ -235,7 +235,6 @@ START-LINE: 4"
        ((string-match "github.com" commit-remote)
         (and commit-ref file-name selection-range
              (format "%s/blob/%s/%s#%s" commit-remote commit-ref file-name selection-range)))
-
        ;; BitBucket URL format
        ((string-match "bitbucket.org" commit-remote)
         (and commit-ref file-name start-line
@@ -246,10 +245,9 @@ START-LINE: 4"
 Supports GitHub and BitBucket. HREF-URL becomes the href attribute,
 TEXT-PATH the anchor tag text."
   (cond
-   ;;GitHub: Use HTML, display smaller
+   ;; GitHub: Use HTML, display smaller
    ((string-match "github.com" href-url)
     (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" href-url text-path))
-
    ;; BitBucket: Use Markdown
    ((string-match "bitbucket.org" href-url)
     (format "\n\n[%s](%s)" text-path href-url))))
