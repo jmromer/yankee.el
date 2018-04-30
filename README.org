@@ -6,13 +6,14 @@ annotations to help readers gain more context:
 - ~yankee/yank-as-gfm-code-block~
 - ~yankee/yank-as-gfm-code-block-folded~
 - ~yankee/yank-as-org-code-block~
+- ~yankee/yank-as-jira-code-block~
 
 These are especially useful when composing issues and pull/merge requests on
 GitHub / GitLab / Bitbucket, but have broader utility as well.
 
 Each function yanks the selected code block and formats it as described by the
-function name: As GitHub-flavored Markdown, Foldable GFM, or an Org mode source
-block.
+function name: As GitHub-flavored Markdown, Foldable GFM, an Org mode source
+block, or Jira source block.
 
 If the file is in a project, its path relative to the project root will be used
 to annotate the code block with a comment including the selected line numbers.
@@ -40,13 +41,13 @@ Currently only supports Git."
     nil))
 ```
 <sup>
-  <a href="https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163">
+  <a href="https://github.com/jmromer/yankee/blob/ea278931/yankee.el#L158-L163">
     yankee.el#L158-L163 (ea278931)
   </a>
 </sup>
 #+END_SRC
 
-which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm][output]]:
+which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm][output]]:
 
 #+CAPTION: yank-as-gfm-code-block
 #+NAME: fig: gfm
@@ -71,14 +72,14 @@ Currently only supports Git."
     nil))
 ```
 <sup>
-  <a href=https://github.com/jkrmr/yankee/blob/ea278931/yankee.el#L158-L163">
+  <a href=https://github.com/jmromer/yankee/blob/ea278931/yankee.el#L158-L163">
     yankee.el#L158-L163 (ea278931)
   </a>
 </sup>
 </details>
 #+END_SRC
 
-which produces this [[https://github.com/jkrmr/yankee/pull/1#user-content-gfm-foldable][output]]:
+which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm-foldable][output]]:
 
 #+CAPTION: yank-as-gfm-code-block-foldable
 #+NAME: fig: gfm-foldable
@@ -99,7 +100,7 @@ Currently only supports Git."
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
 #+ END_SRC
-[[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
+[[https://github.com/jmromer/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
 #+END_SRC
 
 which produces this output:
@@ -114,7 +115,30 @@ Currently only supports Git."
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
 #+END_SRC
-[[https://github.com/jkrmr/yankee/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
+[[https://github.com/jmromer/yankee/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
+
+** Jira
+
+#+BEGIN_SRC
+{code:python}
+# testproj/articles/models.py L4-L9 (ee46f59fb1)
+
+class Article(models.Model):
+    title = models.CharField(help_text="title model help_text", max_length=255, blank=False, unique=True)
+    body = models.TextField(help_text="article model help_text", max_length=5000, blank=False)
+    slug = models.SlugField(help_text="slug model help_text", unique=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
+{code}
+
+[testproj/articles/models.py#L4-L9 (ee46f59fb1)|https://github.com/axnsan12/drf-yasg/blob/ee46f59fb1/testproj/articles/models.py#L4-L9]
+#+END_SRC
+
+which renders as follows:
+
+#+CAPTION: yank-as-jira-code-block
+#+NAME: fig: jira
+[[https://user-images.githubusercontent.com/4433943/39444725-b02dadb2-4c86-11e8-9a04-b03e6fd4503e.png][https://user-images.githubusercontent.com/4433943/39444725-b02dadb2-4c86-11e8-9a04-b03e6fd4503e.png]]
 
 ** Demo
 
@@ -135,7 +159,7 @@ Currently only supports Git."
   (load "yankee.el/yankee.el")
   (require 'yankee)
 #+END_SRC
-[[https://github.com/jkrmr/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (8b3c0dcd)]]
+[[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (8b3c0dcd)]]
 
 *** Suggested keybindings for evil-mode
 
@@ -149,4 +173,4 @@ Currently only supports Git."
   (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
   (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
 #+END_SRC
-[[https://github.com/jkrmr/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
+[[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
