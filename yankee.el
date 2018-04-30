@@ -166,11 +166,11 @@ Includes a filename comment annotation."
     (eval `(setq ,mode-hook-atom ,original-mode-hooks))))
 
 (defun yankee--current-buffer-language (mode-string)
-  "The language used in the current buffer, extracted from the major MODE-STRING.
+  "The language used in the current buffer, inferred from the major MODE-STRING.
 Intended for use in code block. Corner cases are mapped to strings GFM / Org can
 understand."
   (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
-    (cond ((equal language "tuareg") "ocaml")
+    (cond ((string= language "tuareg") "ocaml")
           ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
           (t language))))
 
