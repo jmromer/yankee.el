@@ -260,7 +260,7 @@ TEXT-PATH the anchor tag text."
     (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" href-url text-path))
    ;; BitBucket: Use Markdown
    ((string-match "bitbucket.org" href-url)
-    (format "\n\n[%s](%s)" text-path href-url))))
+    (format "\n%s\n%s" text-path href-url))))
 
 
 (defun yankee--code-snippet-path (commit-ref file-name selection-range)
