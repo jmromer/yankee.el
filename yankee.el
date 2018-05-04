@@ -273,12 +273,16 @@ Supports GitHub, GitLab, and Bitbucket. HREF-URL becomes the href attribute,
 TEXT-PATH the anchor tag text."
   (cond
    ;; GitHub / GitLab: Use HTML, display smaller
-   ((or (string-match "github.com" href-url)
-        (string-match "gitlab.com" href-url))
-    (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" href-url text-path))
+   ((or (string-match-p "github.com" href-url)
+        (string-match-p "gitlab.com" href-url))
+    (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n"
+            href-url
+            text-path))
    ;; BitBucket: Use Markdown
-   ((string-match "bitbucket.org" href-url)
-    (format "\n[%s](%s)" text-path href-url))))
+   ((string-match-p "bitbucket.org" href-url)
+    (format "\n[%s](%s)"
+            text-path
+            href-url))))
 
 
 (defun yankee--code-snippet-path (commit-ref file-name selection-range)
