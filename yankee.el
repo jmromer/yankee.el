@@ -183,9 +183,16 @@ understand."
 
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
+If the buffer's file has uncommitted changes, return 'uncommitted'.
 Currently only supports Git."
   (when (eq 'Git (vc-backend (buffer-file-name)))
-    (substring (shell-command-to-string "git rev-parse HEAD") 0 10)))
+    (let ((filename
+           (yankee--abbreviated-project-or-home-path-to-file))
+          (uncommitted-files
+           (replace-regexp-in-string "\n\\'" "" (shell-command-to-string "git diff-files --ignore-submodules --name-only"))))
+      (if (string-match-p filename uncommitted-files)
+          "uncommitted"
+        (substring (shell-command-to-string "git rev-parse HEAD") 0 10)))))
 
 (defun yankee--current-commit-remote ()
   "The current commit's remote URL, if under version control with a remote set.
