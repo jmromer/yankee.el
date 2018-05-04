@@ -25,6 +25,7 @@
 ;; yankee/yank-as-gfm-code-block
 ;; yankee/yank-as-gfm-code-block-folded
 ;; yankee/yank-as-org-code-block
+;; yankee/yank-as-jira-code-block
 
 ;;; Code:
 
@@ -79,23 +80,20 @@ The current directory is assumed to be the project's root otherwise."
         ((string= modename "fundamental-mode") "text-mode")
         (t (format "%s" modename))))
 
-(defun yankee--selected-lines (start end)
-  "Return the selected line numbers bounded by START and END as a string.
-Formats the returned line number or range of lines (e.g., 'L5', 'L5-L10')."
-  (interactive "r")
-
-  (let* (;; The line number at the start position, as an integer.
-         (start-line (line-number-at-pos start))
-         ;; The line number at the end position, as an integer.
-         (end-line (line-number-at-pos (- end 1)))
-         ;; The start line as a string. Example: 'L5'.
-         (start-line-string (concat "L" (number-to-string start-line)))
-         ;; The end line as a string. Example: 'L10'.
-         (end-line-string (concat "L" (number-to-string end-line))))
-
-    (if (= 0 (- end-line start-line))
-        start-line-string
-      (concat start-line-string "-" end-line-string))))
+(defun yankee--selected-lines (format start-line end-line)
+  "Return the selected line numbers as a string.
+In the given FORMAT, generate the selection range string for the selection with
+the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
+  (cond ((equal format 'path)
+         (if (equal start-line end-line)
+             (format "L%s" (number-to-string start-line))
+           (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line))))
+        ((equal format 'github)
+         (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line)))
+        ((equal format 'gitlab)
+         (format "L%s-%s" (number-to-string start-line) (number-to-string end-line)))
+        ((equal format 'bitbucket)
+         (format "lines-%s:%s" (number-to-string start-line) (number-to-string end-line)))))
 
 (defun yankee--path-relative-to-project-root ()
   "The current file's path relative to the project root."
@@ -121,8 +119,12 @@ Includes a filename comment annotation."
          (file-name (yankee--abbreviated-project-or-home-path-to-file))
          ;; The current commit reference, if under version control.
          (commit-ref (yankee--current-commit-ref))
-         ;; The selected line or line numbers ('L-prefixed).
-         (selection-range (yankee--selected-lines start end))
+         ;; The line number of the start of the selection
+         (start-linenum (line-number-at-pos start))
+         ;; The line number of the end of the selection
+         (end-linenum (line-number-at-pos (- end 1)))
+         ;; Selection range, formatted for display. e.g. L5 or L5-L9
+         (selection-range (yankee--selected-lines 'path start-linenum end-linenum))
          ;; The content of the selected line(s).
          (selected-lines (buffer-substring start end))
          ;; The current buffer's major mode.
@@ -134,13 +136,15 @@ Includes a filename comment annotation."
          ;; The language, as derived from the major mode.
          (language-mode (yankee--current-buffer-language mode-string))
          ;; A path for the selected code, including line numbers and SHA.
-         (snippet-path (yankee--code-snippet-path commit-ref file-name selection-range))
+         (snippet-path (yankee--code-snippet-path commit-ref
+                                                  file-name
+                                                  selection-range))
          ;; A URL for the selected code, if a remote version exists.
          (snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
                                                 commit-ref
                                                 file-name
-                                                selection-range
-                                                (line-number-at-pos start)))
+                                                start-linenum
+                                                end-linenum))
          ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
          (mode-hook-atom (intern (format "%s-hook" mode-string)))
          ;; Store any mode hooks
@@ -229,38 +233,52 @@ Currently only supports Git."
   (insert "\n\n" code "\{code\}\n\n")
   (and url (insert (format "[%s|%s]" path url))))
 
-(defun yankee--code-snippet-url (commit-remote commit-ref file-name selection-range start-line)
+(defun yankee--code-snippet-url (commit-remote commit-ref file-name start-line end-line)
   "Generate the snippet url in the appropriate format depending on the service.
-Supports GitHub and BitBucket.
+Supports GitHub, GitLab, and Bitbucket.
 
 Examples:
 COMMIT-REMOTE: https://github.com/orgname/reponame/file.py
 COMMIT-REF: 105561ec24
 FILE-NAME: file.py
-SELECTION-RANGE: L4-L8
-START-LINE: 4"
-  (if commit-remote
+START-LINE: 4
+END-LINE: 8"
+  (and commit-remote commit-ref file-name start-line end-line
       (cond
        ;; GitHub URL format
        ((string-match "github.com" commit-remote)
-        (and commit-ref file-name selection-range
-             (format "%s/blob/%s/%s#%s" commit-remote commit-ref file-name selection-range)))
+        (format "%s/blob/%s/%s#%s"
+                 commit-remote
+                 commit-ref
+                 file-name
+                 (yankee--selected-lines 'github start-line end-line)))
+       ;; GitLab URL format
+       ((string-match "gitlab.com" commit-remote)
+        (format "%s/blob/%s/%s#%s"
+                 commit-remote
+                 commit-ref
+                 file-name
+                 (yankee--selected-lines 'gitlab start-line end-line)))
        ;; BitBucket URL format
        ((string-match "bitbucket.org" commit-remote)
-        (and commit-ref file-name start-line
-             (format "%s/src/%s/%s#%s-%s" commit-remote commit-ref file-name file-name start-line))))))
+        (format "%s/src/%s/%s#%s"
+                 commit-remote
+                 commit-ref
+                 file-name
+                 (yankee--selected-lines 'bitbucket start-line end-line))))))
 
 (defun yankee--hyperlink-to-patch (href-url text-path)
   "Generate the hyperlink to the yanked patch in the appropriate format.
-Supports GitHub and BitBucket. HREF-URL becomes the href attribute,
+Supports GitHub, GitLab, and Bitbucket. HREF-URL becomes the href attribute,
 TEXT-PATH the anchor tag text."
   (cond
-   ;; GitHub: Use HTML, display smaller
-   ((string-match "github.com" href-url)
+   ;; GitHub / GitLab: Use HTML, display smaller
+   ((or (string-match "github.com" href-url)
+        (string-match "gitlab.com" href-url))
     (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" href-url text-path))
    ;; BitBucket: Use Markdown
    ((string-match "bitbucket.org" href-url)
-    (format "\n\n[%s](%s)" text-path href-url))))
+    (format "\n[%s](%s)" text-path href-url))))
 
 
 (defun yankee--code-snippet-path (commit-ref file-name selection-range)
@@ -268,7 +286,7 @@ TEXT-PATH the anchor tag text."
 Examples:
 COMMIT-REF: 105561ec24
 FILE-NAME: appointments.py
-SELECTION-RANGE: L4-L5"
+SELECTION-RANGE: L4-L8."
   (if commit-ref
       (format "%s#%s (%s)" file-name selection-range commit-ref)
     (format "%s#%s" file-name selection-range)))
