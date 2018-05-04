@@ -246,21 +246,21 @@ END-LINE: 8"
   (and commit-remote commit-ref file-name start-line end-line
       (cond
        ;; GitHub URL format
-       ((string-match "github.com" commit-remote)
+       ((string-match-p "github.com" commit-remote)
         (format "%s/blob/%s/%s#%s"
                  commit-remote
                  commit-ref
                  file-name
                  (yankee--selected-lines 'github start-line end-line)))
        ;; GitLab URL format
-       ((string-match "gitlab.com" commit-remote)
+       ((string-match-p "gitlab.com" commit-remote)
         (format "%s/blob/%s/%s#%s"
                  commit-remote
                  commit-ref
                  file-name
                  (yankee--selected-lines 'gitlab start-line end-line)))
        ;; BitBucket URL format
-       ((string-match "bitbucket.org" commit-remote)
+       ((string-match-p "bitbucket.org" commit-remote)
         (format "%s/src/%s/%s#%s"
                  commit-remote
                  commit-ref
