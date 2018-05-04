@@ -196,7 +196,7 @@ Currently only supports Git."
   (when (eq 'Git (vc-backend (buffer-file-name)))
     (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
           (uncommitted-files (yankee--git-list-dirty-files)))
-      (if (string-match-p filename uncommitted-files)
+      (if (string-match-p (format "^%s" filename) uncommitted-files)
           "uncommitted"
         (substring (shell-command-to-string "git rev-parse HEAD") 0 10)))))
 
