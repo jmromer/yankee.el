@@ -181,15 +181,21 @@ understand."
           ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
           (t language))))
 
+(defun yankee--git-list-dirty-files ()
+  "Using Git, list the repository's currently dirty files.
+Includes files with modifications and new files not yet in the index."
+  (replace-regexp-in-string
+   "\n\\'" ""
+   (shell-command-to-string
+    "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
+
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
 If the buffer's file has uncommitted changes, return 'uncommitted'.
 Currently only supports Git."
   (when (eq 'Git (vc-backend (buffer-file-name)))
-    (let ((filename
-           (yankee--abbreviated-project-or-home-path-to-file))
-          (uncommitted-files
-           (replace-regexp-in-string "\n\\'" "" (shell-command-to-string "git diff-files --ignore-submodules --name-only"))))
+    (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
+          (uncommitted-files (yankee--git-list-dirty-files)))
       (if (string-match-p filename uncommitted-files)
           "uncommitted"
         (substring (shell-command-to-string "git rev-parse HEAD") 0 10)))))
