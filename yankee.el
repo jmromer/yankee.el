@@ -246,21 +246,21 @@ END-LINE: 8"
   (and commit-remote commit-ref file-name start-line end-line
       (cond
        ;; GitHub URL format
-       ((string-match "github.com" commit-remote)
+       ((string-match-p "github.com" commit-remote)
         (format "%s/blob/%s/%s#%s"
                  commit-remote
                  commit-ref
                  file-name
                  (yankee--selected-lines 'github start-line end-line)))
        ;; GitLab URL format
-       ((string-match "gitlab.com" commit-remote)
+       ((string-match-p "gitlab.com" commit-remote)
         (format "%s/blob/%s/%s#%s"
                  commit-remote
                  commit-ref
                  file-name
                  (yankee--selected-lines 'gitlab start-line end-line)))
        ;; BitBucket URL format
-       ((string-match "bitbucket.org" commit-remote)
+       ((string-match-p "bitbucket.org" commit-remote)
         (format "%s/src/%s/%s#%s"
                  commit-remote
                  commit-ref
@@ -273,12 +273,16 @@ Supports GitHub, GitLab, and Bitbucket. HREF-URL becomes the href attribute,
 TEXT-PATH the anchor tag text."
   (cond
    ;; GitHub / GitLab: Use HTML, display smaller
-   ((or (string-match "github.com" href-url)
-        (string-match "gitlab.com" href-url))
-    (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" href-url text-path))
+   ((or (string-match-p "github.com" href-url)
+        (string-match-p "gitlab.com" href-url))
+    (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n"
+            href-url
+            text-path))
    ;; BitBucket: Use Markdown
-   ((string-match "bitbucket.org" href-url)
-    (format "\n[%s](%s)" text-path href-url))))
+   ((string-match-p "bitbucket.org" href-url)
+    (format "\n[%s](%s)"
+            text-path
+            href-url))))
 
 
 (defun yankee--code-snippet-path (commit-ref file-name selection-range)
