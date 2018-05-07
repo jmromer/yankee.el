@@ -66,14 +66,6 @@ The current directory is assumed to be the project's root otherwise."
                default-directory))))
     project-root))
 
-(defun yankee--git-remote-url (remote-name)
-  "Return the url for the remote named REMOTE-NAME."
-  (shell-command-to-string
-   (format "git remote -v |\
-     grep %s |\
-     awk '/fetch/{print $2}' |\
-     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
-
 (defun yankee--mode-string (modename)
   "Return the current buffer's major mode, MODENAME, as a string."
   (cond ((string= modename nil) "text-mode")
@@ -181,6 +173,14 @@ understand."
           ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
           (t language))))
 
+(defun yankee--remote-url-git (remote-name)
+  "Using Git, return the url for the remote named REMOTE-NAME."
+  (shell-command-to-string
+   (format "git remote -v |\
+     grep %s |\
+     awk '/fetch/{print $2}' |\
+     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
+
 (defun yankee--list-dirty-files-git ()
   "Using Git, list the repository's currently dirty files.
 Includes files with modifications and new files not yet in the index."
@@ -190,7 +190,7 @@ Includes files with modifications and new files not yet in the index."
     "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
 
 (defun yankee--current-commit-ref-git ()
-  "Return the ref for the buffer file's current commit.
+  "Using Git, return the ref for the buffer file's current commit.
 If dirty or untracked, return 'uncommitted'."
   (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
         (uncommitted-files (yankee--list-dirty-files-git)))
@@ -214,7 +214,7 @@ Currently only supports Git."
   (when (eq 'Git (vc-backend (buffer-file-name)))
       (let ((remote-url (replace-regexp-in-string
                          "\n$" ""
-                         (yankee--git-remote-url "origin"))))
+                         (yankee--remote-url-git "origin"))))
         (and (string-match-p "http" remote-url) remote-url))))
 
 (defun yankee--gfm-code-fence (language code path url)
@@ -305,7 +305,6 @@ TEXT-PATH the anchor tag text."
             text-path
             href-url))))
 
-
 (defun yankee--code-snippet-path (commit-ref file-name selection-range)
   "Generate the snippet path. Displayed as the patch's hyperlink text.
 Examples:
@@ -315,7 +314,6 @@ SELECTION-RANGE: L4-L8."
   (if commit-ref
       (format "%s#%s (%s)" file-name selection-range commit-ref)
     (format "%s#%s" file-name selection-range)))
-
 
 (defun yankee/yank-as-gfm-code-block (start end)
   "In a GFM code fence, yank the selection bounded by START and END.
