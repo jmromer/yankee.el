@@ -87,8 +87,11 @@ which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm-
 
 ** Org mode
 
-#+BEGIN_SRC text
-#+BEGIN_SRC emacs-lisp
+   NB: The `BEGIN_SRC` tag is intentionally broken here for display purposes.
+
+
+#+BEGIN_EXAMPLE
+# +BEGIN_SRC emacs-lisp
 ;; yankee.el L158-L163 (517300b3)
 
 (defun yankee/current-commit-ref ()
@@ -97,9 +100,9 @@ Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
-#+END_SRC
+# +END_SRC
 [[https://github.com/jmromer/yankee.el/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
-#+END_SRC
+#+END_EXAMPLE
 
 which produces this output:
 
