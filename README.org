@@ -41,7 +41,7 @@ Currently only supports Git."
     nil))
 ```
 <sup>
-  <a href="https://github.com/jmromer/yankee/blob/ea278931/yankee.el#L158-L163">
+  <a href="https://github.com/jmromer/yankee.el/blob/ea278931/yankee.el#L158-L163">
     yankee.el#L158-L163 (ea278931)
   </a>
 </sup>
@@ -72,7 +72,7 @@ Currently only supports Git."
     nil))
 ```
 <sup>
-  <a href=https://github.com/jmromer/yankee/blob/ea278931/yankee.el#L158-L163">
+  <a href=https://github.com/jmromer/yankee.el/blob/ea278931/yankee.el#L158-L163">
     yankee.el#L158-L163 (ea278931)
   </a>
 </sup>
@@ -87,10 +87,8 @@ which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm-
 
 ** Org mode
 
-(Intentionally broken here so the raw syntax will render)
-
-#+BEGIN_SRC org
-#+ BEGIN_SRC emacs-lisp
+#+BEGIN_SRC text
+#+BEGIN_SRC emacs-lisp
 ;; yankee.el L158-L163 (517300b3)
 
 (defun yankee/current-commit-ref ()
@@ -99,8 +97,8 @@ Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
-#+ END_SRC
-[[https://github.com/jmromer/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
+#+END_SRC
+[[https://github.com/jmromer/yankee.el/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
 #+END_SRC
 
 which produces this output:
