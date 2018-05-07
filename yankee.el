@@ -181,7 +181,7 @@ understand."
           ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
           (t language))))
 
-(defun yankee--git-list-dirty-files ()
+(defun yankee--list-dirty-files-git ()
   "Using Git, list the repository's currently dirty files.
 Includes files with modifications and new files not yet in the index."
   (replace-regexp-in-string
@@ -189,16 +189,24 @@ Includes files with modifications and new files not yet in the index."
    (shell-command-to-string
     "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
 
+(defun yankee--current-commit-ref-git ()
+  "Return the ref for the buffer file's current commit.
+If dirty or untracked, return 'uncommitted'."
+  (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
+        (uncommitted-files (yankee--list-dirty-files-git)))
+    (if (string-match-p (format "^%s" filename) uncommitted-files)
+        "uncommitted"
+      (substring (shell-command-to-string "git rev-parse HEAD") 0 10))))
+
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
 If the buffer's file has uncommitted changes, return 'uncommitted'.
 Currently only supports Git."
-  (when (eq 'Git (vc-backend (buffer-file-name)))
-    (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
-          (uncommitted-files (yankee--git-list-dirty-files)))
-      (if (string-match-p (format "^%s" filename) uncommitted-files)
-          "uncommitted"
-        (substring (shell-command-to-string "git rev-parse HEAD") 0 10)))))
+  (cond
+   ((bound-and-true-p git-timemachine-mode)
+    (substring (git-timemachine-kill-revision) 0 10))
+   ((eq 'Git (vc-backend (buffer-file-name)))
+    (yankee--current-commit-ref-git))))
 
 (defun yankee--current-commit-remote ()
   "The current commit's remote URL, if under version control with a remote set.
