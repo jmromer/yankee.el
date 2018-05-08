@@ -116,7 +116,7 @@ Currently only supports Git."
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
 #+END_SRC
-[[https://github.com/jmromer/yankee/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
+[[https://github.com/jmromer/yankee.el/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
 
 ** Jira
 
