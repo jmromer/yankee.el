@@ -41,13 +41,13 @@ Currently only supports Git."
     nil))
 ```
 <sup>
-  <a href="https://github.com/jmromer/yankee/blob/ea278931/yankee.el#L158-L163">
+  <a href="https://github.com/jmromer/yankee.el/blob/ea278931/yankee.el#L158-L163">
     yankee.el#L158-L163 (ea278931)
   </a>
 </sup>
 #+END_SRC
 
-which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm][output]]:
+which produces this [[https://github.com/jmromer/yankee.el/pull/1#user-content-gfm][output]]:
 
 #+CAPTION: yank-as-gfm-code-block
 #+NAME: fig: gfm
@@ -72,14 +72,14 @@ Currently only supports Git."
     nil))
 ```
 <sup>
-  <a href=https://github.com/jmromer/yankee/blob/ea278931/yankee.el#L158-L163">
+  <a href=https://github.com/jmromer/yankee.el/blob/ea278931/yankee.el#L158-L163">
     yankee.el#L158-L163 (ea278931)
   </a>
 </sup>
 </details>
 #+END_SRC
 
-which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm-foldable][output]]:
+which produces this [[https://github.com/jmromer/yankee.el/pull/1#user-content-gfm-foldable][output]]:
 
 #+CAPTION: yank-as-gfm-code-block-foldable
 #+NAME: fig: gfm-foldable
@@ -87,10 +87,10 @@ which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm-
 
 ** Org mode
 
-(Intentionally broken here so the raw syntax will render)
+   NB: The `BEGIN_SRC` tag is intentionally broken here for display purposes.
 
 #+BEGIN_SRC org
-#+ BEGIN_SRC emacs-lisp
+#+BEGIN SRC emacs-lisp
 ;; yankee.el L158-L163 (517300b3)
 
 (defun yankee/current-commit-ref ()
@@ -99,8 +99,8 @@ Currently only supports Git."
   (if (equal 'Git (vc-backend (buffer-file-name)))
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
-#+ END_SRC
-[[https://github.com/jmromer/yankee/blob/517300b3/yankee.el#L158-L163] [yankee.el#L158-L163 (517300b3)]]
+#+END SRC
+[[https://github.com/jmromer/yankee.el/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
 #+END_SRC
 
 which produces this output:
@@ -115,7 +115,7 @@ Currently only supports Git."
       (substring (shell-command-to-string "git rev-parse HEAD") 0 8)
     nil))
 #+END_SRC
-[[https://github.com/jmromer/yankee/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
+[[https://github.com/jmromer/yankee.el/blob/517300b3/yankee.el#L158-L163][yankee.el#L158-L163 (517300b3)]]
 
 ** Jira
 
@@ -154,24 +154,24 @@ which renders as follows:
   project's parent directory has been added to the ~load-path~):
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L319-L320 (8b3c0dcd)
+;; home/spacemacs.d/init.el L547-L548 (809ac19f4b)
 
   (load "yankee.el/yankee.el")
   (require 'yankee)
 #+END_SRC
-[[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (8b3c0dcd)]]
+[[https://github.com/jmromer/dotfiles/blob/809ac19f4b/home/spacemacs.d/init.el#L547-L548][home/spacemacs.d/init.el#L547-L548 (809ac19f4b)]]
 
 *** Suggested keybindings for evil-mode
 
     Spacemacs and Evil-mode users may find the following key bindings intuitive:
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L321-L324 (8b3c0dcd)
-
-  (define-key evil-visual-state-map (kbd "gy") nil)
-  (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
-  (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
-  (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
-  (define-key evil-visual-state-map (kbd "gyj") #'yankee/yank-as-jira-code-block)
+;; home/spacemacs.d/init.el L550-L555 (809ac19f4b)
+      (progn
+        (define-key evil-visual-state-map (kbd "gy") nil)
+        (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
+        (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
+        (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
+        (define-key evil-visual-state-map (kbd "gyj") #'yankee/yank-as-jira-code-block))
 #+END_SRC
-[[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
+[[https://github.com/jmromer/dotfiles/blob/809ac19f4b/home/spacemacs.d/init.el#L550-L555][home/spacemacs.d/init.el#L550-L555 (809ac19f4b)]]
