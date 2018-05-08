@@ -155,24 +155,24 @@ which renders as follows:
   project's parent directory has been added to the ~load-path~):
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L319-L320 (8b3c0dcd)
+;; home/spacemacs.d/init.el L547-L548 (809ac19f4b)
 
   (load "yankee.el/yankee.el")
   (require 'yankee)
 #+END_SRC
-[[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L319-L320][home/spacemacs.d/init.el#L319-L320 (8b3c0dcd)]]
+[[https://github.com/jmromer/dotfiles/blob/809ac19f4b/home/spacemacs.d/init.el#L547-L548][home/spacemacs.d/init.el#L547-L548 (809ac19f4b)]]
 
 *** Suggested keybindings for evil-mode
 
     Spacemacs and Evil-mode users may find the following key bindings intuitive:
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L321-L324 (8b3c0dcd)
-
-  (define-key evil-visual-state-map (kbd "gy") nil)
-  (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
-  (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
-  (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
-  (define-key evil-visual-state-map (kbd "gyj") #'yankee/yank-as-jira-code-block)
+;; home/spacemacs.d/init.el L550-L555 (809ac19f4b)
+      (progn
+        (define-key evil-visual-state-map (kbd "gy") nil)
+        (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
+        (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
+        (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
+        (define-key evil-visual-state-map (kbd "gyj") #'yankee/yank-as-jira-code-block))
 #+END_SRC
-[[https://github.com/jmromer/dotfiles/blob/8b3c0dcd/home/spacemacs.d/init.el#L321-L324][home/spacemacs.d/init.el#L321-L324 (8b3c0dcd)]]
+[[https://github.com/jmromer/dotfiles/blob/809ac19f4b/home/spacemacs.d/init.el#L550-L555][home/spacemacs.d/init.el#L550-L555 (809ac19f4b)]]
