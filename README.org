@@ -47,7 +47,7 @@ Currently only supports Git."
 </sup>
 #+END_SRC
 
-which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm][output]]:
+which produces this [[https://github.com/jmromer/yankee.el/pull/1#user-content-gfm][output]]:
 
 #+CAPTION: yank-as-gfm-code-block
 #+NAME: fig: gfm
@@ -79,7 +79,7 @@ Currently only supports Git."
 </details>
 #+END_SRC
 
-which produces this [[https://github.com/jmromer/yankee/pull/1#user-content-gfm-foldable][output]]:
+which produces this [[https://github.com/jmromer/yankee.el/pull/1#user-content-gfm-foldable][output]]:
 
 #+CAPTION: yank-as-gfm-code-block-foldable
 #+NAME: fig: gfm-foldable
