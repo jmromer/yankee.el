@@ -172,21 +172,28 @@ line with the left-most text."
     (replace-regexp-in-string "\n\+\\'" "" string))
 
   (defun leading-whitespace-length (string)
-    (or (string-match-p "[^[:space:]]" string) 0))
+    (let ((first-non-whitespace-char-posn
+           (string-match-p "[^[:space:]]" string)))
+      (or first-non-whitespace-char-posn 0)))
 
   (defun least-leading-whitespace-length (lines)
     (car (sort (mapcar #'leading-whitespace-length lines) '<)))
 
-  (defun trim-leading-chars-and-join (n-leading-chars lines)
-    (mapconcat
-     (lambda (line) (substring line n-leading-chars))
-     lines
-     "\n"))
+  (defun trim-leading-chars-and-join (num-chars-to-trim lines)
+    (defun trim-line-unless-blank (line)
+      (if (not (string= "" line))
+          (substring line num-chars-to-trim)
+        line))
+    (mapconcat #'trim-line-unless-blank lines "\n"))
 
-  (let* ((chomped-text (chomp-trailing-newlines text))
-         (text-lines (split-string chomped-text "\n"))
-         (trim-length (least-leading-whitespace-length text-lines))
-         (trimmed-text (trim-leading-chars-and-join trim-length text-lines)))
+  (let* ((all-lines        ;; a list of all selected lines
+          (split-string (chomp-trailing-newlines text) "\n"))
+         (non-blank-lines  ;; only those with non-whitespace chars
+          (seq-filter (lambda (line) (not (string= line ""))) all-lines))
+         (start-index      ;; index of leftmost non-whitespace char
+          (least-leading-whitespace-length non-blank-lines))
+         (trimmed-text     ;; re-joined text, with leading whitespace text
+          (trim-leading-chars-and-join start-index all-lines)))
     (concat trimmed-text "\n")))
 
 (defun yankee--current-buffer-language (mode-string)
