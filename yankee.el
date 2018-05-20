@@ -118,7 +118,7 @@ Includes a filename comment annotation."
          ;; Selection range, formatted for display. e.g. L5 or L5-L9
          (selection-range (yankee--selected-lines 'path start-linenum end-linenum))
          ;; The content of the selected line(s).
-         (selected-lines (buffer-substring start end))
+         (selected-lines (yankee--clean-leading-whitepace (buffer-substring start end)))
          ;; The current buffer's major mode.
          (mode-name (buffer-local-value 'major-mode (current-buffer)))
          ;; The current buffer's major mode as a string.
@@ -163,6 +163,31 @@ Includes a filename comment annotation."
 
     ;; re-enable the current major mode's hooks
     (eval `(setq ,mode-hook-atom ,original-mode-hooks))))
+
+(defun yankee--clean-leading-whitepace (text)
+  "Strip leading whitespace from each line of TEXT.
+The amount stripped from each line is equal to the amount stripped from the
+line with the left-most text."
+  (defun chomp-trailing-newlines (string)
+    (replace-regexp-in-string "\n\+\\'" "" string))
+
+  (defun leading-whitespace-length (string)
+    (or (string-match-p "[^[:space:]]" string) 0))
+
+  (defun least-leading-whitespace-length (lines)
+    (car (sort (mapcar #'leading-whitespace-length lines) '<)))
+
+  (defun trim-leading-chars-and-join (n-leading-chars lines)
+    (mapconcat
+     (lambda (line) (substring line n-leading-chars))
+     lines
+     "\n"))
+
+  (let* ((chomped-text (chomp-trailing-newlines text))
+         (text-lines (split-string chomped-text "\n"))
+         (trim-length (least-leading-whitespace-length text-lines))
+         (trimmed-text (trim-leading-chars-and-join trim-length text-lines)))
+    (concat trimmed-text "\n")))
 
 (defun yankee--current-buffer-language (mode-string)
   "The language used in the current buffer, inferred from the major MODE-STRING.
