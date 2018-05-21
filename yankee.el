@@ -344,8 +344,8 @@ COMMIT-REF: 105561ec24
 FILE-NAME: appointments.py
 SELECTION-RANGE: L4-L8."
   (if commit-ref
-      (format "%s#%s (%s)" file-name selection-range commit-ref)
-    (format "%s#%s" file-name selection-range)))
+      (format "%s %s (%s)" file-name selection-range commit-ref)
+    (format "%s %s" file-name selection-range)))
 
 (defun yankee/yank-as-gfm-code-block (start end)
   "In a GFM code fence, yank the selection bounded by START and END.
