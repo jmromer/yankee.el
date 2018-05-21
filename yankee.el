@@ -79,7 +79,7 @@ the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
   (cond ((equal format 'path)
          (if (equal start-line end-line)
              (format "L%s" (number-to-string start-line))
-           (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line))))
+           (format "L%s-%s" (number-to-string start-line) (number-to-string end-line))))
         ((equal format 'github)
          (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line)))
         ((equal format 'gitlab)
@@ -262,7 +262,7 @@ Currently only supports Git."
   (goto-char (point-min))
   (insert "<details>\n")
   (insert "<summary>" )
-  (insert (read-string "Summary: "))
+  (insert (read-string "Summary: " path))
   (insert "</summary>\n\n")
   (insert "```" language "\n")
   (goto-char (point-max))
@@ -344,8 +344,8 @@ COMMIT-REF: 105561ec24
 FILE-NAME: appointments.py
 SELECTION-RANGE: L4-L8."
   (if commit-ref
-      (format "%s#%s (%s)" file-name selection-range commit-ref)
-    (format "%s#%s" file-name selection-range)))
+      (format "%s %s (%s)" file-name selection-range commit-ref)
+    (format "%s %s" file-name selection-range)))
 
 (defun yankee/yank-as-gfm-code-block (start end)
   "In a GFM code fence, yank the selection bounded by START and END.
