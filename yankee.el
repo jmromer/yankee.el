@@ -79,7 +79,7 @@ the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
   (cond ((equal format 'path)
          (if (equal start-line end-line)
              (format "L%s" (number-to-string start-line))
-           (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line))))
+           (format "L%s-%s" (number-to-string start-line) (number-to-string end-line))))
         ((equal format 'github)
          (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line)))
         ((equal format 'gitlab)
