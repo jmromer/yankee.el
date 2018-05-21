@@ -262,7 +262,7 @@ Currently only supports Git."
   (goto-char (point-min))
   (insert "<details>\n")
   (insert "<summary>" )
-  (insert (read-string "Summary: "))
+  (insert (read-string "Summary: " path))
   (insert "</summary>\n\n")
   (insert "```" language "\n")
   (goto-char (point-max))
