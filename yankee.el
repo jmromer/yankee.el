@@ -62,7 +62,7 @@ The current directory is assumed to be the project's root otherwise."
                   (car)
                   (yankee--expand-file-name))
              (if yankee--require-project-root
-                 (error "You're not into a project")
+                 (error "You're not in a project")
                default-directory))))
     project-root))
 
