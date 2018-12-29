@@ -1,10 +1,10 @@
 ;;; yankee.el --- GFM / Org-mode source block yanker   -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Jake Romer
+;; Copyright (C) 2019  Jake Romer
 
-;; Author: Jake Romer <jkrmr@jakeromer.com>
+;; Author: Jake Romer <mail@jakeromer.com>
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
-;; Version: 0.0.1
+;; Version: 0.0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -132,11 +132,11 @@ Includes a filename comment annotation."
                                                   file-name
                                                   selection-range))
          ;; A URL for the selected code, if a remote version exists.
-         (snippet-url (yankee--code-snippet-url (yankee--current-commit-remote)
-                                                commit-ref
-                                                file-name
-                                                start-linenum
-                                                end-linenum))
+         (snippet-url (and commit-ref (yankee--code-snippet-url (yankee--current-commit-remote)
+                                                                commit-ref
+                                                                file-name
+                                                                start-linenum
+                                                                end-linenum)))
          ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
          (mode-hook-atom (intern (format "%s-hook" mode-string)))
          ;; Store any mode hooks
@@ -232,7 +232,6 @@ If dirty or untracked, return 'uncommitted'."
 
 (defun yankee--current-commit-ref ()
   "The current commit's SHA, if under version control.
-If the buffer's file has uncommitted changes, return 'uncommitted'.
 Currently only supports Git."
   (cond
    ((bound-and-true-p git-timemachine-mode)
@@ -268,7 +267,7 @@ Currently only supports Git."
   (goto-char (point-max))
   (insert "\n\n" code "```\n")
   (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" url path)))
-  (insert "</details>"))
+  (insert "</details><p></p>\n"))
 
 (defun yankee--org-code-fence (language code path url)
   "Create an Org code block with LANGUAGE annotation containing CODE, PATH, and URL."
