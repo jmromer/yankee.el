@@ -23,12 +23,58 @@
 
 ;;; Commentary:
 
-;; Provides the following functions:
+;; Provides the following interactive function:
 ;; yankee/yank
 
 ;;; Code:
 
-;; Logic courtesy of projectile
+;; Interactive function
+(defun yankee/yank (start end)
+  "Yank the region bounded by START and END as code block.
+Prompt for output format."
+  (interactive "r")
+
+  (setq file-name (yankee--abbreviated-project-or-home-path-to-file)
+        mode-name (buffer-local-value 'major-mode (current-buffer)))
+
+  (setq mode-atom (intern (yankee--mode-string mode-name))
+        mode-string (yankee--mode-string mode-name))
+
+  (setq start-linenum (line-number-at-pos start))
+
+  ;; The line number of the end of the selection
+  (setq end-linenum (line-number-at-pos (- end 1)))
+
+  ;; Selection range, formatted for display. e.g. L5 or L5-L9
+  (setq selection-range (yankee--selected-lines 'path start-linenum end-linenum))
+
+  ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
+  (setq mode-hook-atom (intern (format "%s-hook" mode-string)))
+
+  ;; Store any mode hooks
+  (setq original-mode-hooks (format "%s" (eval `,mode-hook-atom)))
+
+  ;; disable any major mode hooks for the current mode
+  (eval `(setq ,mode-hook-atom nil))
+
+  ;; Get line numbers and file number
+  (setq current-prefix-arg '(4))
+  (copy-as-format)
+
+  ;; re-enable the current major mode's hooks
+  (eval `(setq ,mode-hook-atom ,original-mode-hooks)))
+
+;; `projectile' functions
+(defvar yankee--project-root-files
+  '(".git" ".hg" ".bzr" "_darcs" ".projectile")
+  "A list of files considered to mark the root of a project.")
+
+(defcustom yankee--require-project-root t
+  "Require the presence of a project root to operate when true.
+Otherwise consider the current directory the project root."
+  :group 'yankee
+  :type 'boolean)
+
 (defun yankee--in-project-p ()
   "Check if we're in a project."
   (condition-case nil
@@ -40,16 +86,6 @@
 Expand FILE-NAME using `default-directory'."
   (when file-name
     (expand-file-name file-name)))
-
-(defvar yankee--project-root-files
-  '(".git" ".hg" ".bzr" "_darcs" ".projectile")
-  "A list of files considered to mark the root of a project.")
-
-(defcustom yankee--require-project-root t
-  "Require the presence of a project root to operate when true.
-Otherwise consider the current directory the project root."
-  :group 'yankee
-  :type 'boolean)
 
 (defun yankee--project-root ()
   "Retrieves the root directory of a project if available.
@@ -65,8 +101,8 @@ The current directory is assumed to be the project's root otherwise."
                default-directory))))
     project-root))
 
-;; copy-as-format folded gfm format
-
+;; `copy-as-format' functions
+;; - Define a template for folded github-flavored markdown
 (defun copy-as-format--github-folded (text multiline)
   "Create a foldable GFM code block with TEXT as body.
 MULTILINE is a boolean indicating if the selected text spans multiple lines."
@@ -76,12 +112,14 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
                 summary (copy-as-format--language) text)
       (copy-as-format--inline-markdown text))))
 
+;; - Add template to `copy-as-format-format-alist'
 (with-eval-after-load 'copy-as-format
   (if (boundp 'copy-as-format-format-alist)
       (add-to-list 'copy-as-format-format-alist
                    '("github-folded" copy-as-format--github-folded))
     (error "`copy-as-format-format-alist' not defined")))
 
+;; - Override `copy-as-format' function to provide informative comment
 (defun copy-as-format--extract-text ()
   "Override function in `copy-as-format' to add filename comment."
   (if (not (use-region-p))
@@ -100,8 +138,15 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
 
         ;; Let's trim unnecessary leading space from the region
         (setq text (buffer-substring-no-properties (region-beginning) end))
+
         (with-temp-buffer
-          (insert text)
+          ;; insert comment line
+          (funcall mode-atom)
+          (insert file-name " " selection-range)
+          (comment-or-uncomment-region (line-beginning-position) (line-end-position))
+          (insert "\n\n")
+
+          (insert (yankee--clean-leading-whitepace text))
           (goto-char (point-min))
           ;; The length of the match (see below) determines how much leading
           ;; space to trim
@@ -117,33 +162,7 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
             (indent-rigidly 1 (point-max) (- min)))
           (buffer-string)))))
 
-(defun yankee/yank ()
-  "Yank as code block, prompt for output format."
-  (interactive)
-  (setq current-prefix-arg '(4))
-  (copy-as-format))
-
-(defun yankee--selected-lines (format start-line end-line)
-  "Return the selected line numbers as a string.
-In the given FORMAT, generate the selection range string for the selection with
-the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
-  (cond ((equal format 'path)
-         (if (equal start-line end-line)
-             (format "L%s" (number-to-string start-line))
-           (format "L%s-%s" (number-to-string start-line) (number-to-string end-line))))
-        ((equal format 'github)
-         (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line)))
-        ((equal format 'gitlab)
-         (format "L%s-%s" (number-to-string start-line) (number-to-string end-line)))
-        ((equal format 'bitbucket)
-         (format "lines-%s:%s" (number-to-string start-line) (number-to-string end-line)))))
-
-(defun yankee--path-relative-to-project-root ()
-  "The current file's path relative to the project root."
-  (interactive)
-  (replace-regexp-in-string (yankee--project-root) ""
-                            (expand-file-name (or (buffer-file-name) ""))))
-
+;; Utility yankee functions
 (defun yankee--abbreviated-project-or-home-path-to-file ()
   "The path to the current buffer's file.
 If in a project, the path is relative to the project root.
@@ -185,57 +204,15 @@ line with the left-most text."
           (trim-leading-chars-and-join start-index all-lines)))
     (concat trimmed-text "\n")))
 
-(defun yankee--current-buffer-language (mode-string)
-  "The language used in the current buffer, inferred from the major MODE-STRING.
-Intended for use in code block. Corner cases are mapped to strings GFM / Org can
-understand."
-  (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
-    (cond ((string= language "tuareg") "ocaml")
-          ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
-          (t language))))
-
-(defun yankee--remote-url-git (remote-name)
-  "Using Git, return the url for the remote named REMOTE-NAME."
-  (shell-command-to-string
-   (format "git remote -v |\
-     grep %s |\
-     awk '/fetch/{print $2}' |\
-     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
-
-(defun yankee--list-dirty-files-git ()
-  "Using Git, list the repository's currently dirty files.
-Includes files with modifications and new files not yet in the index."
-  (replace-regexp-in-string
-   "\n\\'" ""
-   (shell-command-to-string
-    "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
-
-(defun yankee--current-commit-ref-git ()
-  "Using Git, return the ref for the buffer file's current commit.
-If dirty or untracked, return 'uncommitted'."
-  (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
-        (uncommitted-files (yankee--list-dirty-files-git)))
-    (if (string-match-p (format "^%s" filename) uncommitted-files)
-        "uncommitted"
-      (substring (shell-command-to-string "git rev-parse HEAD") 0 10))))
-
-(defun yankee--current-commit-ref ()
-  "The current commit's SHA, if under version control.
-Currently only supports Git."
-  (cond
-   ((bound-and-true-p git-timemachine-mode)
-    (substring (git-timemachine-kill-revision) 0 10))
-   ((eq 'Git (vc-backend (buffer-file-name)))
-    (yankee--current-commit-ref-git))))
-
-(defun yankee--current-commit-remote ()
-  "The current commit's remote URL, if under version control with a remote set.
-Currently only supports Git."
-  (when (eq 'Git (vc-backend (buffer-file-name)))
-      (let ((remote-url (replace-regexp-in-string
-                         "\n$" ""
-                         (yankee--remote-url-git "origin"))))
-        (and (string-match-p "http" remote-url) remote-url))))
+(defun yankee--code-snippet-path (commit-ref file-name selection-range)
+  "Generate the snippet path. Displayed as the patch's hyperlink text.
+Examples:
+COMMIT-REF: 105561ec24
+FILE-NAME: appointments.py
+SELECTION-RANGE: L4-L8."
+  (if commit-ref
+      (format "%s %s (%s)" file-name selection-range commit-ref)
+    (format "%s %s" file-name selection-range)))
 
 (defun yankee--code-snippet-url (commit-remote commit-ref file-name start-line end-line)
   "Generate the snippet url in the appropriate format depending on the service.
@@ -271,6 +248,42 @@ END-LINE: 8"
                  file-name
                  (yankee--selected-lines 'bitbucket start-line end-line))))))
 
+(defun yankee--current-buffer-language (mode-string)
+  "The language used in the current buffer, inferred from the major MODE-STRING.
+Intended for use in code block. Corner cases are mapped to strings GFM / Org can
+understand."
+  (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
+    (cond ((string= language "tuareg") "ocaml")
+          ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
+          (t language))))
+
+(defun yankee--current-commit-ref ()
+  "The current commit's SHA, if under version control.
+Currently only supports Git."
+  (cond
+   ((bound-and-true-p git-timemachine-mode)
+    (substring (git-timemachine-kill-revision) 0 10))
+   ((eq 'Git (vc-backend (buffer-file-name)))
+    (yankee--current-commit-ref-git))))
+
+(defun yankee--current-commit-ref-git ()
+  "Using Git, return the ref for the buffer file's current commit.
+If dirty or untracked, return 'uncommitted'."
+  (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
+        (uncommitted-files (yankee--list-dirty-files-git)))
+    (if (string-match-p (format "^%s" filename) uncommitted-files)
+        "uncommitted"
+      (substring (shell-command-to-string "git rev-parse HEAD") 0 10))))
+
+(defun yankee--current-commit-remote ()
+  "The current commit's remote URL, if under version control with a remote set.
+Currently only supports Git."
+  (when (eq 'Git (vc-backend (buffer-file-name)))
+      (let ((remote-url (replace-regexp-in-string
+                         "\n$" ""
+                         (yankee--remote-url-git "origin"))))
+        (and (string-match-p "http" remote-url) remote-url))))
+
 (defun yankee--hyperlink-to-patch (href-url text-path)
   "Generate the hyperlink to the yanked patch in the appropriate format.
 Supports GitHub, GitLab, and Bitbucket. HREF-URL becomes the href attribute,
@@ -288,15 +301,49 @@ TEXT-PATH the anchor tag text."
             text-path
             href-url))))
 
-(defun yankee--code-snippet-path (commit-ref file-name selection-range)
-  "Generate the snippet path. Displayed as the patch's hyperlink text.
-Examples:
-COMMIT-REF: 105561ec24
-FILE-NAME: appointments.py
-SELECTION-RANGE: L4-L8."
-  (if commit-ref
-      (format "%s %s (%s)" file-name selection-range commit-ref)
-    (format "%s %s" file-name selection-range)))
+(defun yankee--list-dirty-files-git ()
+  "Using Git, list the repository's currently dirty files.
+Includes files with modifications and new files not yet in the index."
+  (replace-regexp-in-string
+   "\n\\'" ""
+   (shell-command-to-string
+    "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
+
+(defun yankee--mode-string (modename)
+  "Return the current buffer's major mode, MODENAME, as a string."
+  (cond ((string= modename nil) "text-mode")
+        ((string= modename "fundamental-mode") "text-mode")
+        (t (format "%s" modename))))
+
+(defun yankee--path-relative-to-project-root ()
+  "The current file's path relative to the project root."
+  (interactive)
+  (replace-regexp-in-string (yankee--project-root) ""
+                            (expand-file-name (or (buffer-file-name) ""))))
+
+(defun yankee--remote-url-git (remote-name)
+  "Using Git, return the url for the remote named REMOTE-NAME."
+  (shell-command-to-string
+   (format "git remote -v |\
+     grep %s |\
+     awk '/fetch/{print $2}' |\
+     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
+
+(defun yankee--selected-lines (format start-line end-line)
+  "Return the selected line numbers as a string.
+In the given FORMAT, generate the selection range string for the selection with
+the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
+  (cond ((equal format 'path)
+         (if (equal start-line end-line)
+             (format "L%s" (number-to-string start-line))
+           (format "L%s-%s" (number-to-string start-line) (number-to-string end-line))))
+        ((equal format 'github)
+         (format "L%s-L%s" (number-to-string start-line) (number-to-string end-line)))
+        ((equal format 'gitlab)
+         (format "L%s-%s" (number-to-string start-line) (number-to-string end-line)))
+        ((equal format 'bitbucket)
+         (format "lines-%s:%s" (number-to-string start-line) (number-to-string end-line)))))
+
 
 (provide 'yankee)
 ;;; yankee.el ends here
