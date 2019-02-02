@@ -204,7 +204,7 @@ line with the left-most text."
           (least-leading-whitespace-length non-blank-lines))
          (trimmed-text     ;; re-joined text, with leading whitespace text
           (trim-leading-chars-and-join start-index all-lines)))
-    (concat trimmed-text "\n")))
+    trimmed-text))
 
 (defun yankee--current-commit-ref (start end)
   "The most recent commit for the region bounded by line numbers START and END.
