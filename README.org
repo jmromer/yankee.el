@@ -1,31 +1,26 @@
 * yankee.el
 
-Yankee provides functions for yanking source blocks in Emacs with some helpful
-annotations to help readers gain more context:
+Yankee extends ~copy-as-format~ to provide a function for yanking source blocks
+in Emacs with helpful annotations to help readers gain more context:
 
-- ~yankee/yank-as-gfm-code-block~
-- ~yankee/yank-as-gfm-code-block-folded~
-- ~yankee/yank-as-org-code-block~
-- ~yankee/yank-as-jira-code-block~
+- ~yankee/yank~
 
 These are especially useful when composing issues and pull/merge requests on
-GitHub / GitLab / Bitbucket, but have broader utility as well.
+GitHub / GitLab / Bitbucket, but have broader utility as well. See the full list
+of supported formats (and how to add your own) at [[https://github.com/sshaw/copy-as-format][~copy-as-format~]].
 
-Each function yanks the selected code block and formats it as described by the
-function name: As GitHub-flavored Markdown, Foldable GFM, an Org mode source
-block, or Jira source block.
+If the yanked region is in a project, its path relative to the project root will
+be used to annotate the code block with a comment that including the selected
+line numbers.
 
-If the file is in a project, its path relative to the project root will be used
-to annotate the code block with a comment including the selected line numbers.
-(If not in a project, an abbreviated absolute path will be included instead.)
+If not in a project, an abbreviated absolute path will be included instead.
 
 Additionally, if the buffer being yanked from is backed by a file under version
 control, a commit ref will be included.
 
-And lastly, if a VCS remote named ~origin~ is found, a hyperlink to the
-selection, at the correct commit ref, will be included as well.
-
-Currently, only Git is supported, but contributions are welcome.
+# And lastly, if the yanked region is committed to version control, a hyperlink to
+# the selection, at the correct commit ref, will be included as well. (Currently,
+# only Git is supported.)
 
 ** GitHub-flavored Markdown
 
@@ -150,29 +145,19 @@ which renders as follows:
 
 ** Installation
 
-  To install, load yankee.el and require ~yankee~ (the following assumes the
-  project's parent directory has been added to the ~load-path~):
+To install, load yankee.el and require ~yankee~ (the following assumes the
+project's parent directory has been added to the ~load-path~):
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L547-L548 (809ac19f4b)
-
-(load "yankee.el/yankee.el")
+;; ~/spacemacs.d/init.el
 (require 'yankee)
 #+END_SRC
-[[https://github.com/jmromer/dotfiles/blob/809ac19f4b/home/spacemacs.d/init.el#L547-L548][home/spacemacs.d/init.el#L547-L548 (809ac19f4b)]]
 
 *** Suggested keybindings for evil-mode
 
-    Spacemacs and Evil-mode users may find the following key bindings intuitive:
+Spacemacs and Evil-mode users may find the following key bindings intuitive:
 
 #+BEGIN_SRC emacs-lisp
-;; home/spacemacs.d/init.el L550-L555 (809ac19f4b)
-
-(progn
-  (define-key evil-visual-state-map (kbd "gy") nil)
-  (define-key evil-visual-state-map (kbd "gym") #'yankee/yank-as-gfm-code-block)
-  (define-key evil-visual-state-map (kbd "gyf") #'yankee/yank-as-gfm-code-block-folded)
-  (define-key evil-visual-state-map (kbd "gyo") #'yankee/yank-as-org-code-block)
-  (define-key evil-visual-state-map (kbd "gyj") #'yankee/yank-as-jira-code-block))
+;; ~/spacemacs.d/init.el
+(define-key evil-visual-state-map (kbd "g y") #'yankee/yank)
 #+END_SRC
-[[https://github.com/jmromer/dotfiles/blob/809ac19f4b/home/spacemacs.d/init.el#L550-L555][home/spacemacs.d/init.el#L550-L555 (809ac19f4b)]]
