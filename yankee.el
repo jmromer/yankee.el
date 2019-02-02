@@ -120,10 +120,11 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
     (error "`copy-as-format-format-alist' not defined")))
 
 ;; - Override `copy-as-format' function to provide informative comment
-(defun copy-as-format--extract-text ()
-  "Override function in `copy-as-format' to add filename comment."
-  (if (not (use-region-p))
-      (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+(with-eval-after-load 'copy-as-format
+  (defun copy-as-format--extract-text ()
+    "Override function in `copy-as-format' to add filename comment."
+    (if (not (use-region-p))
+        (buffer-substring-no-properties (line-beginning-position) (line-end-position))
       ;; Avoid adding an extra blank line to the selection. This happens when
       ;; point or mark is at the start of the next line.
       ;;
@@ -161,7 +162,7 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
 
           (when (and (not (null min)) (> min 0))
             (indent-rigidly 1 (point-max) (- min)))
-          (buffer-string)))))
+          (buffer-string))))))
 
 ;; Utility yankee functions
 (defun yankee--abbreviated-project-or-home-path-to-file ()
