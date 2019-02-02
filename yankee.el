@@ -1,10 +1,12 @@
 ;;; yankee.el --- GFM / Org-mode source block yanker   -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2019  Jake Romer
+;; Copyright (C) 2019 Jake Romer
 
 ;; Author: Jake Romer <mail@jakeromer.com>
+;; Package-Version: 0.1.0
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
-;; Version: 0.0.2
+;; URL: https://github.com/jmromer/yankee.el
+;; Package-Requires: ((copy-as-format "0.0.8"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,10 +24,7 @@
 ;;; Commentary:
 
 ;; Provides the following functions:
-;; yankee/yank-as-gfm-code-block
-;; yankee/yank-as-gfm-code-block-folded
-;; yankee/yank-as-org-code-block
-;; yankee/yank-as-jira-code-block
+;; yankee/yank
 
 ;;; Code:
 
@@ -36,15 +35,15 @@
       (yankee--project-root)
     (error nil)))
 
-(defvar yankee--project-root-files
-  '(".git" ".hg" ".bzr" "_darcs" ".projectile")
-  "A list of files considered to mark the root of a project.")
-
 (defun yankee--expand-file-name (file-name)
   "A thin wrapper around `expand-file-name' that handles nil.
 Expand FILE-NAME using `default-directory'."
   (when file-name
     (expand-file-name file-name)))
+
+(defvar yankee--project-root-files
+  '(".git" ".hg" ".bzr" "_darcs" ".projectile")
+  "A list of files considered to mark the root of a project.")
 
 (defcustom yankee--require-project-root t
   "Require the presence of a project root to operate when true.
@@ -66,11 +65,63 @@ The current directory is assumed to be the project's root otherwise."
                default-directory))))
     project-root))
 
-(defun yankee--mode-string (modename)
-  "Return the current buffer's major mode, MODENAME, as a string."
-  (cond ((string= modename nil) "text-mode")
-        ((string= modename "fundamental-mode") "text-mode")
-        (t (format "%s" modename))))
+;; copy-as-format folded gfm format
+
+(defun copy-as-format--github-folded (text multiline)
+  "Create a foldable GFM code block with TEXT as body.
+MULTILINE is a boolean indicating if the selected text spans multiple lines."
+  (let ((summary (read-string "Summary: ")))
+    (if multiline
+        (format "<details>\n<summary>%s</summary>\n\n```%s\n%s\n```\n</details>\n"
+                summary (copy-as-format--language) text)
+      (copy-as-format--inline-markdown text))))
+
+(with-eval-after-load 'copy-as-format
+  (if (boundp 'copy-as-format-format-alist)
+      (add-to-list 'copy-as-format-format-alist
+                   '("github-folded" copy-as-format--github-folded))
+    (error "`copy-as-format-format-alist' not defined")))
+
+(defun copy-as-format--extract-text ()
+  "Override function in `copy-as-format' to add filename comment."
+  (if (not (use-region-p))
+      (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+      ;; Avoid adding an extra blank line to the selection. This happens when
+      ;; point or mark is at the start of the next line.
+      ;;
+      ;; When selection is from bottom to top, exchange point and mark
+      ;; so that the `point' and `(region-end)' are the same.
+      (when (< (point) (mark))
+        (exchange-point-and-mark))
+
+      (let (n min text (end (region-end)))
+        (when (= end (line-beginning-position))
+          (setq end (1- end)))
+
+        ;; Let's trim unnecessary leading space from the region
+        (setq text (buffer-substring-no-properties (region-beginning) end))
+        (with-temp-buffer
+          (insert text)
+          (goto-char (point-min))
+          ;; The length of the match (see below) determines how much leading
+          ;; space to trim
+          ;;
+          ;; Without this only one space would be trimmed for each tab
+          (untabify (point-min) (point-max))
+          (while (search-forward-regexp "^\\([[:space:]]*\\)[^[:space:]]" nil t)
+            (setq n (length (match-string 1)))
+            (when (or (null min) (< n min))
+              (setq min n)))
+
+          (when (and (not (null min)) (> min 0))
+            (indent-rigidly 1 (point-max) (- min)))
+          (buffer-string)))))
+
+(defun yankee/yank ()
+  "Yank as code block, prompt for output format."
+  (interactive)
+  (setq current-prefix-arg '(4))
+  (copy-as-format))
 
 (defun yankee--selected-lines (format start-line end-line)
   "Return the selected line numbers as a string.
@@ -101,68 +152,6 @@ If not in a project, the path is an abbreviated absolute path."
   (if (yankee--in-project-p)
       (yankee--path-relative-to-project-root)
     (abbreviate-file-name (or (buffer-file-name) ""))))
-
-(defun yankee--yank-as-code-block (format start end)
-  "In a FORMAT code fence, yank the visual selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-
-  (let* (;; The current buffer's file name.
-         (file-name (yankee--abbreviated-project-or-home-path-to-file))
-         ;; The current commit reference, if under version control.
-         (commit-ref (yankee--current-commit-ref))
-         ;; The line number of the start of the selection
-         (start-linenum (line-number-at-pos start))
-         ;; The line number of the end of the selection
-         (end-linenum (line-number-at-pos (- end 1)))
-         ;; Selection range, formatted for display. e.g. L5 or L5-L9
-         (selection-range (yankee--selected-lines 'path start-linenum end-linenum))
-         ;; The content of the selected line(s).
-         (selected-lines (yankee--clean-leading-whitepace (buffer-substring start end)))
-         ;; The current buffer's major mode.
-         (mode-name (buffer-local-value 'major-mode (current-buffer)))
-         ;; The current buffer's major mode as a string.
-         (mode-string (yankee--mode-string mode-name))
-         ;; The current buffer's major mode as an atom.
-         (mode-atom (intern mode-string))
-         ;; The language, as derived from the major mode.
-         (language-mode (yankee--current-buffer-language mode-string))
-         ;; A path for the selected code, including line numbers and SHA.
-         (snippet-path (yankee--code-snippet-path commit-ref
-                                                  file-name
-                                                  selection-range))
-         ;; A URL for the selected code, if a remote version exists.
-         (snippet-url (and commit-ref (yankee--code-snippet-url (yankee--current-commit-remote)
-                                                                commit-ref
-                                                                file-name
-                                                                start-linenum
-                                                                end-linenum)))
-         ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
-         (mode-hook-atom (intern (format "%s-hook" mode-string)))
-         ;; Store any mode hooks
-         (original-mode-hooks (format "%s" (eval `,mode-hook-atom))))
-
-    ;; disable any major mode hooks for the current mode
-    (eval `(setq ,mode-hook-atom nil))
-
-    (with-temp-buffer
-      (funcall mode-atom)
-      (insert file-name " " selection-range
-              (if commit-ref (format " (%s)" commit-ref) ""))
-      (comment-or-uncomment-region (line-beginning-position) (line-end-position))
-
-      (cond ((equal format 'gfm)
-             (yankee--gfm-code-fence language-mode selected-lines snippet-path snippet-url))
-            ((equal format 'gfm-folded)
-             (yankee--gfm-code-fence-folded language-mode selected-lines snippet-path snippet-url))
-            ((equal format 'jira)
-             (yankee--jira-code-fence language-mode selected-lines snippet-path snippet-url))
-            ((equal format 'org)
-             (yankee--org-code-fence language-mode selected-lines snippet-path snippet-url)))
-      (clipboard-kill-ring-save (point-min) (point-max)))
-
-    ;; re-enable the current major mode's hooks
-    (eval `(setq ,mode-hook-atom ,original-mode-hooks))))
 
 (defun yankee--clean-leading-whitepace (text)
   "Strip leading whitespace from each line of TEXT.
@@ -248,43 +237,6 @@ Currently only supports Git."
                          (yankee--remote-url-git "origin"))))
         (and (string-match-p "http" remote-url) remote-url))))
 
-(defun yankee--gfm-code-fence (language code path url)
-  "Create a GFM code block with LANGUAGE block containing CODE, PATH, and URL."
-  (goto-char (point-min))
-  (insert "```" language "\n")
-  (goto-char (point-max))
-  (insert "\n\n" code "```\n")
-  (and url (insert (yankee--hyperlink-to-patch url path))))
-
-(defun yankee--gfm-code-fence-folded (language code path url)
-  "Create a foldable GFM code block with LANGUAGE block containing CODE, PATH, and URL."
-  (goto-char (point-min))
-  (insert "<details>\n")
-  (insert "<summary>" )
-  (insert (read-string "Summary: " path))
-  (insert "</summary>\n\n")
-  (insert "```" language "\n")
-  (goto-char (point-max))
-  (insert "\n\n" code "```\n")
-  (and url (insert (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n" url path)))
-  (insert "</details><p></p>\n"))
-
-(defun yankee--org-code-fence (language code path url)
-  "Create an Org code block with LANGUAGE annotation containing CODE, PATH, and URL."
-  (goto-char (point-min))
-  (insert "#+BEGIN_SRC" " " language "\n")
-  (goto-char (point-max))
-  (insert "\n\n" code "#+END_SRC\n")
-  (and url (insert (format "[[%s][%s]]" url path))))
-
-(defun yankee--jira-code-fence (language code path url)
-  "Create a Jira code block with LANGUAGE annotation containing CODE, PATH, and URL."
-  (goto-char (point-min))
-  (insert "{code:" language "}" "\n")
-  (goto-char (point-max))
-  (insert "\n\n" code "\{code\}\n\n")
-  (and url (insert (format "[%s|%s]" path url))))
-
 (defun yankee--code-snippet-url (commit-remote commit-ref file-name start-line end-line)
   "Generate the snippet url in the appropriate format depending on the service.
 Supports GitHub, GitLab, and Bitbucket.
@@ -345,30 +297,6 @@ SELECTION-RANGE: L4-L8."
   (if commit-ref
       (format "%s %s (%s)" file-name selection-range commit-ref)
     (format "%s %s" file-name selection-range)))
-
-(defun yankee/yank-as-gfm-code-block (start end)
-  "In a GFM code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee--yank-as-code-block 'gfm start end))
-
-(defun yankee/yank-as-gfm-code-block-folded (start end)
-  "In a foldable GFM code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee--yank-as-code-block 'gfm-folded start end))
-
-(defun yankee/yank-as-org-code-block (start end)
-  "In an Org mode code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee--yank-as-code-block 'org start end))
-
-(defun yankee/yank-as-jira-code-block (start end)
-  "In a Jira code fence, yank the selection bounded by START and END.
-Includes a filename comment annotation."
-  (interactive "r")
-  (yankee--yank-as-code-block 'jira start end))
 
 (provide 'yankee)
 ;;; yankee.el ends here
