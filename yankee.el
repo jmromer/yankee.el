@@ -138,19 +138,20 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
 
         ;; Let's trim unnecessary leading space from the region
         (setq text (buffer-substring-no-properties (region-beginning) end))
+        (setq commit-hash (yankee--current-commit-ref start-linenum end-linenum))
 
         (with-temp-buffer
-          ;; insert comment line
+          ;; insert informative comment line
           (funcall mode-atom)
-          (insert file-name " " selection-range)
+          (insert file-name " " selection-range " "
+                  (if (not commit-hash) "" (format "(%s)" commit-hash)))
           (comment-or-uncomment-region (line-beginning-position) (line-end-position))
           (insert "\n\n")
 
           (insert (yankee--clean-leading-whitepace text))
           (goto-char (point-min))
           ;; The length of the match (see below) determines how much leading
-          ;; space to trim
-          ;;
+          ;; space to trim.
           ;; Without this only one space would be trimmed for each tab
           (untabify (point-min) (point-max))
           (while (search-forward-regexp "^\\([[:space:]]*\\)[^[:space:]]" nil t)
@@ -204,110 +205,31 @@ line with the left-most text."
           (trim-leading-chars-and-join start-index all-lines)))
     (concat trimmed-text "\n")))
 
-(defun yankee--code-snippet-path (commit-ref file-name selection-range)
-  "Generate the snippet path. Displayed as the patch's hyperlink text.
-Examples:
-COMMIT-REF: 105561ec24
-FILE-NAME: appointments.py
-SELECTION-RANGE: L4-L8."
-  (if commit-ref
-      (format "%s %s (%s)" file-name selection-range commit-ref)
-    (format "%s %s" file-name selection-range)))
-
-(defun yankee--code-snippet-url (commit-remote commit-ref file-name start-line end-line)
-  "Generate the snippet url in the appropriate format depending on the service.
-Supports GitHub, GitLab, and Bitbucket.
-
-Examples:
-COMMIT-REMOTE: https://github.com/orgname/reponame/file.py
-COMMIT-REF: 105561ec24
-FILE-NAME: file.py
-START-LINE: 4
-END-LINE: 8"
-  (and commit-remote commit-ref file-name start-line end-line
-      (cond
-       ;; GitHub URL format
-       ((string-match-p "github.com" commit-remote)
-        (format "%s/blob/%s/%s#%s"
-                 commit-remote
-                 commit-ref
-                 file-name
-                 (yankee--selected-lines 'github start-line end-line)))
-       ;; GitLab URL format
-       ((string-match-p "gitlab.com" commit-remote)
-        (format "%s/blob/%s/%s#%s"
-                 commit-remote
-                 commit-ref
-                 file-name
-                 (yankee--selected-lines 'gitlab start-line end-line)))
-       ;; BitBucket URL format
-       ((string-match-p "bitbucket.org" commit-remote)
-        (format "%s/src/%s/%s#%s"
-                 commit-remote
-                 commit-ref
-                 file-name
-                 (yankee--selected-lines 'bitbucket start-line end-line))))))
-
-(defun yankee--current-buffer-language (mode-string)
-  "The language used in the current buffer, inferred from the major MODE-STRING.
-Intended for use in code block. Corner cases are mapped to strings GFM / Org can
-understand."
-  (let ((language (replace-regexp-in-string "-mode$" "" mode-string)))
-    (cond ((string= language "tuareg") "ocaml")
-          ((member language '("js2" "js" "js2-jsx" "js-jsx" "react")) "javascript")
-          (t language))))
-
-(defun yankee--current-commit-ref ()
-  "The current commit's SHA, if under version control.
-Currently only supports Git."
+(defun yankee--current-commit-ref (start end)
+  "The most recent commit for the region bounded by line numbers START and END.
+If not under version control or uncommitted changes exist in the region, return
+nil. Currently only supports Git and git-timemachine mode."
   (cond
    ((bound-and-true-p git-timemachine-mode)
-    (substring (git-timemachine-kill-revision) 0 10))
+    (yankee--current-commit-ref-git-timemachine))
    ((eq 'Git (vc-backend (buffer-file-name)))
-    (yankee--current-commit-ref-git))))
+    (yankee--current-commit-ref-git start end))))
 
-(defun yankee--current-commit-ref-git ()
-  "Using Git, return the ref for the buffer file's current commit.
+(defun yankee--current-commit-ref-git-timemachine ()
+  "Return the current commit's ref."
+  (substring (git-timemachine-kill-revision) 0 8))
+
+(defun yankee--current-commit-ref-git (start end)
+  "Using Git, return the latest ref in region bounded by START and END.
 If dirty or untracked, return 'uncommitted'."
-  (let ((filename (yankee--abbreviated-project-or-home-path-to-file))
-        (uncommitted-files (yankee--list-dirty-files-git)))
-    (if (string-match-p (format "^%s" filename) uncommitted-files)
-        "uncommitted"
-      (substring (shell-command-to-string "git rev-parse HEAD") 0 10))))
-
-(defun yankee--current-commit-remote ()
-  "The current commit's remote URL, if under version control with a remote set.
-Currently only supports Git."
-  (when (eq 'Git (vc-backend (buffer-file-name)))
-      (let ((remote-url (replace-regexp-in-string
-                         "\n$" ""
-                         (yankee--remote-url-git "origin"))))
-        (and (string-match-p "http" remote-url) remote-url))))
-
-(defun yankee--hyperlink-to-patch (href-url text-path)
-  "Generate the hyperlink to the yanked patch in the appropriate format.
-Supports GitHub, GitLab, and Bitbucket. HREF-URL becomes the href attribute,
-TEXT-PATH the anchor tag text."
-  (cond
-   ;; GitHub / GitLab: Use HTML, display smaller
-   ((or (string-match-p "github.com" href-url)
-        (string-match-p "gitlab.com" href-url))
-    (format "<sup>\n  <a href=\"%s\">\n    %s\n  </a>\n</sup>\n<p></p>\n"
-            href-url
-            text-path))
-   ;; BitBucket: Use Markdown
-   ((string-match-p "bitbucket.org" href-url)
-    (format "\n[%s](%s)"
-            text-path
-            href-url))))
-
-(defun yankee--list-dirty-files-git ()
-  "Using Git, list the repository's currently dirty files.
-Includes files with modifications and new files not yet in the index."
-  (replace-regexp-in-string
-   "\n\\'" ""
-   (shell-command-to-string
-    "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
+  (let* ((filename (yankee--abbreviated-project-or-home-path-to-file))
+         (commit-ref (replace-regexp-in-string
+                      "\n\\'" ""
+                      (shell-command-to-string
+                       (format "git blame -L%s,%s -- %s | sort -k3 | head -1 | awk '{ print $1 }'"
+                               start end filename)))))
+    (unless (string= commit-ref "00000000")
+      (substring commit-ref 0 8))))
 
 (defun yankee--mode-string (modename)
   "Return the current buffer's major mode, MODENAME, as a string."
@@ -320,14 +242,6 @@ Includes files with modifications and new files not yet in the index."
   (interactive)
   (replace-regexp-in-string (yankee--project-root) ""
                             (expand-file-name (or (buffer-file-name) ""))))
-
-(defun yankee--remote-url-git (remote-name)
-  "Using Git, return the url for the remote named REMOTE-NAME."
-  (shell-command-to-string
-   (format "git remote -v |\
-     grep %s |\
-     awk '/fetch/{print $2}' |\
-     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
 
 (defun yankee--selected-lines (format start-line end-line)
   "Return the selected line numbers as a string.
@@ -343,7 +257,6 @@ the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
          (format "L%s-%s" (number-to-string start-line) (number-to-string end-line)))
         ((equal format 'bitbucket)
          (format "lines-%s:%s" (number-to-string start-line) (number-to-string end-line)))))
-
 
 (provide 'yankee)
 ;;; yankee.el ends here
