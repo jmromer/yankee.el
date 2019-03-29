@@ -64,17 +64,6 @@ Prompt for output format."
   ;; re-enable the current major mode's hooks
   (eval `(setq ,mode-hook-atom ,original-mode-hooks)))
 
-;; `projectile' functions
-(defvar yankee--project-root-files
-  '(".git" ".hg" ".bzr" "_darcs" ".projectile")
-  "A list of files considered to mark the root of a project.")
-
-(defcustom yankee--require-project-root t
-  "Require the presence of a project root to operate when true.
-Otherwise consider the current directory the project root."
-  :group 'yankee
-  :type 'boolean)
-
 (defun yankee--in-project-p ()
   "Check if we're in a project."
   (condition-case nil
@@ -88,18 +77,14 @@ Expand FILE-NAME using `default-directory'."
     (expand-file-name file-name)))
 
 (defun yankee--project-root ()
-  "Retrieves the root directory of a project if available.
-The current directory is assumed to be the project's root otherwise."
-  (let ((project-root
-         (or (->> yankee--project-root-files
-                  (--map (locate-dominating-file default-directory it))
-                  (-remove #'null)
-                  (car)
-                  (yankee--expand-file-name))
-             (if yankee--require-project-root
-                 (error "You're not in a project")
-               default-directory))))
-    project-root))
+  "Retrieves the root directory of a project if available."
+  (cond
+   ((boundp 'projectile-project-root)
+    (projectile-project-root))
+   ((eq 'Git (vc-backend (buffer-file-name)))
+    (replace-regexp-in-string
+     "\n\\'" ""
+     (shell-command-to-string "git rev-parse --show-toplevel")))))
 
 ;; `copy-as-format' functions
 ;; - Define a template for folded github-flavored markdown
@@ -223,7 +208,7 @@ nil. Currently only supports Git and git-timemachine mode."
 (defun yankee--current-commit-ref-git (start end)
   "Using Git, return the latest ref in region bounded by START and END.
 If dirty or untracked, return 'uncommitted'."
-  (let* ((filename (yankee--abbreviated-project-or-home-path-to-file))
+  (let* ((filename (or (buffer-file-name) ""))
          (commit-ref (replace-regexp-in-string
                       "\n\\'" ""
                       (shell-command-to-string
