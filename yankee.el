@@ -208,7 +208,7 @@ nil. Currently only supports Git and git-timemachine mode."
 (defun yankee--current-commit-ref-git (start end)
   "Using Git, return the latest ref in region bounded by START and END.
 If dirty or untracked, return 'uncommitted'."
-  (let* ((filename (yankee--abbreviated-project-or-home-path-to-file))
+  (let* ((filename (or (buffer-file-name) ""))
          (commit-ref (replace-regexp-in-string
                       "\n\\'" ""
                       (shell-command-to-string
