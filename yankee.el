@@ -6,7 +6,8 @@
 ;; Package-Version: 0.1.0
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
 ;; URL: https://github.com/jmromer/yankee.el
-;; Package-Requires: ((copy-as-format "0.0.8"))
+;; Package-Requires: ((copy-as-format "0.0.8") (emacs "24.4"))
+
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -24,15 +25,24 @@
 ;;; Commentary:
 
 ;; Provides the following interactive function:
-;; yankee/yank
+;; yankee-yank
 
 ;;; Code:
 
 ;; Interactive function
-(defun yankee/yank (start end)
+(defun yankee-yank (start end)
   "Yank the region bounded by START and END as code block.
 Prompt for output format."
   (interactive "r")
+
+  (defvar file-name)
+  (defvar mode-atom)
+  (defvar mode-string)
+  (defvar selection-range)
+  (defvar start-linenum)
+  (defvar end-linenum)
+  (defvar mode-hook-atom)
+  (defvar original-mode-hooks)
 
   (setq file-name (yankee--abbreviated-project-or-home-path-to-file)
         mode-name (buffer-local-value 'major-mode (current-buffer)))
@@ -59,7 +69,9 @@ Prompt for output format."
 
   ;; Get line numbers and file number
   (setq current-prefix-arg '(4))
-  (copy-as-format)
+  (if (boundp 'copy-as-format)
+      (copy-as-format)
+    (error "Package yankee.el requires copy-as-format"))
 
   ;; re-enable the current major mode's hooks
   (eval `(setq ,mode-hook-atom ,original-mode-hooks)))
@@ -88,7 +100,7 @@ Expand FILE-NAME using `default-directory'."
 
 ;; `copy-as-format' functions
 ;; - Define a template for folded github-flavored markdown
-(defun copy-as-format--github-folded (text multiline)
+(defun yankee-copy-as-format--github-folded (text multiline)
   "Create a foldable GFM code block with TEXT as body.
 MULTILINE is a boolean indicating if the selected text spans multiple lines."
   (let ((summary (read-string "Summary: ")))
@@ -101,13 +113,21 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
 (with-eval-after-load 'copy-as-format
   (if (boundp 'copy-as-format-format-alist)
       (add-to-list 'copy-as-format-format-alist
-                   '("github-folded" copy-as-format--github-folded))
+                   '("github-folded" yankee-copy-as-format--github-folded))
     (error "`copy-as-format-format-alist' not defined")))
 
 ;; - Override `copy-as-format' function to provide informative comment
 (with-eval-after-load 'copy-as-format
   (defun copy-as-format--extract-text ()
     "Override function in `copy-as-format' to add filename comment."
+
+    (defvar file-name)
+    (defvar mode-atom)
+    (defvar selection-range)
+    (defvar start-linenum)
+    (defvar end-linenum)
+    (defvar commit-hash)
+
     (if (not (use-region-p))
         (buffer-substring-no-properties (line-beginning-position) (line-end-position))
       ;; Avoid adding an extra blank line to the selection. This happens when
