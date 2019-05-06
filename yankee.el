@@ -214,7 +214,7 @@ If dirty or untracked, return 'uncommitted'."
                       (shell-command-to-string
                        (format "git blame -L%s,%s -- %s | sort -k3 | head -1 | awk '{ print $1 }'"
                                start end filename)))))
-    (unless (string= commit-ref "00000000")
+    (unless (string-match-p "^0+$" commit-ref)
       (substring commit-ref 0 8))))
 
 (defun yankee--mode-string (modename)
