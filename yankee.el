@@ -69,7 +69,7 @@ Prompt for output format."
 
   ;; Get line numbers and file number
   (setq current-prefix-arg '(4))
-  (if (boundp 'copy-as-format)
+  (if (fboundp 'copy-as-format)
       (copy-as-format)
     (error "Package yankee.el requires copy-as-format"))
 

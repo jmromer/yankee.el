@@ -3,7 +3,7 @@
 Yankee extends ~copy-as-format~ to provide a function for yanking source blocks
 in Emacs with helpful annotations to help readers gain more context:
 
-- ~yankee/yank~
+- ~yankee-yank~
 
 These are especially useful when composing issues and pull/merge requests on
 GitHub / GitLab / Bitbucket, but have broader utility as well. See the full list
