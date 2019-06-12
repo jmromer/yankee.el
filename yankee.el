@@ -3,7 +3,7 @@
 ;; Copyright (C) 2019 Jake Romer
 
 ;; Author: Jake Romer <mail@jakeromer.com>
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
 ;; URL: https://github.com/jmromer/yankee.el
 ;; Package-Requires: ((copy-as-format "0.0.8") (emacs "24.4"))
@@ -41,8 +41,6 @@ Prompt for output format."
   (defvar selection-range)
   (defvar start-linenum)
   (defvar end-linenum)
-  (defvar mode-hook-atom)
-  (defvar original-mode-hooks)
 
   (setq file-name (yankee--abbreviated-project-or-home-path-to-file)
         mode-name (buffer-local-value 'major-mode (current-buffer)))
@@ -58,23 +56,11 @@ Prompt for output format."
   ;; Selection range, formatted for display. e.g. L5 or L5-L9
   (setq selection-range (yankee--selected-lines 'path start-linenum end-linenum))
 
-  ;; Example: in tuareg-mode, 'tuareg-mode-hook' variable, as a symbol
-  (setq mode-hook-atom (intern (format "%s-hook" mode-string)))
-
-  ;; Store any mode hooks
-  (setq original-mode-hooks (format "%s" (eval `,mode-hook-atom)))
-
-  ;; disable any major mode hooks for the current mode
-  (eval `(setq ,mode-hook-atom nil))
-
   ;; Get line numbers and file number
   (setq current-prefix-arg '(4))
   (if (fboundp 'copy-as-format)
       (copy-as-format)
-    (error "Package yankee.el requires copy-as-format"))
-
-  ;; re-enable the current major mode's hooks
-  (eval `(setq ,mode-hook-atom ,original-mode-hooks)))
+    (error "Package yankee.el requires copy-as-format")))
 
 (defun yankee--in-project-p ()
   "Check if we're in a project."
