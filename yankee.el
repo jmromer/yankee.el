@@ -3,7 +3,7 @@
 ;; Copyright (C) 2019 Jake Romer
 
 ;; Author: Jake Romer <mail@jakeromer.com>
-;; Package-Version: 0.1.1
+;; Package-Version: 0.1.2
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
 ;; URL: https://github.com/jmromer/yankee.el
 ;; Package-Requires: ((copy-as-format "0.0.8") (emacs "24.4"))
@@ -35,12 +35,12 @@
 Prompt for output format."
   (interactive "r")
 
+  (defvar end-linenum)
   (defvar file-name)
   (defvar mode-atom)
   (defvar mode-string)
   (defvar selection-range)
   (defvar start-linenum)
-  (defvar end-linenum)
 
   (setq file-name (yankee--abbreviated-project-or-home-path-to-file)
         mode-name (buffer-local-value 'major-mode (current-buffer)))
@@ -85,14 +85,33 @@ Expand FILE-NAME using `default-directory'."
      (shell-command-to-string "git rev-parse --show-toplevel")))))
 
 ;; `copy-as-format' functions
+;; - Redefine copy-as-format--github to add url
+(with-eval-after-load 'copy-as-format
+  (defun copy-as-format--github (text multiline)
+    "Create a GFM code block with TEXT as body.
+MULTILINE is a boolean indicating if the selected text spans multiple lines."
+    (if multiline
+        (format "```%s\n%s\n```\n%s"
+                (copy-as-format--language)
+                text
+                (if (and (boundp 'snippet-url) snippet-url)
+                    (format "<sup>[[source](%s)]</sup>\n" snippet-url)
+                  ""))
+      (copy-as-format--inline-markdown text))))
+
 ;; - Define a template for folded github-flavored markdown
 (defun yankee-copy-as-format--github-folded (text multiline)
   "Create a foldable GFM code block with TEXT as body.
 MULTILINE is a boolean indicating if the selected text spans multiple lines."
   (let ((summary (read-string "Summary: ")))
     (if multiline
-        (format "<details>\n<summary>%s</summary>\n\n```%s\n%s\n```\n</details>\n"
-                summary (copy-as-format--language) text)
+        (format "<details>\n<summary>%s</summary>\n\n```%s\n%s\n```\n%s</details>\n"
+                summary
+                (copy-as-format--language)
+                text
+                (if (and (boundp 'snippet-url) snippet-url)
+                    (format "<sup>[[source](%s)]</sup>\n" snippet-url)
+                  ""))
       (copy-as-format--inline-markdown text))))
 
 ;; - Add template to `copy-as-format-format-alist'
@@ -113,6 +132,16 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
     (defvar start-linenum)
     (defvar end-linenum)
     (defvar commit-hash)
+    (defvar snippet-url)
+
+    (setq commit-hash (yankee--current-commit-ref start-linenum end-linenum))
+    (setq snippet-url (and commit-hash
+                        (yankee--code-snippet-url
+                         (yankee--current-commit-remote)
+                         commit-hash
+                         file-name
+                         start-linenum
+                         end-linenum)))
 
     (if (not (use-region-p))
         (buffer-substring-no-properties (line-beginning-position) (line-end-position))
@@ -130,7 +159,6 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
 
         ;; Let's trim unnecessary leading space from the region
         (setq text (buffer-substring-no-properties (region-beginning) end))
-        (setq commit-hash (yankee--current-commit-ref start-linenum end-linenum))
 
         (with-temp-buffer
           ;; insert informative comment line
@@ -249,6 +277,64 @@ the given START-LINE and END-LINE (e.g., 'L5-L10', 'L5-10', or 'lines-5:10')."
          (format "L%s-%s" (number-to-string start-line) (number-to-string end-line)))
         ((equal format 'bitbucket)
          (format "lines-%s:%s" (number-to-string start-line) (number-to-string end-line)))))
+
+(defun yankee--code-snippet-url (commit-remote commit-ref file-name start-line end-line)
+  "Generate the snippet url in the appropriate format depending on the service.
+Supports GitHub, GitLab, and Bitbucket.
+Examples:
+COMMIT-REMOTE: https://github.com/orgname/reponame/file.py
+COMMIT-REF: 105561ec24
+FILE-NAME: file.py
+START-LINE: 4
+END-LINE: 8"
+  (and commit-remote commit-ref file-name start-line end-line
+      (cond
+       ;; GitHub URL format
+       ((string-match-p "github.com" commit-remote)
+        (format "%s/blob/%s/%s#%s"
+                 commit-remote
+                 commit-ref
+                 file-name
+                 (yankee--selected-lines 'github start-line end-line)))
+       ;; GitLab URL format
+       ((string-match-p "gitlab.com" commit-remote)
+        (format "%s/blob/%s/%s#%s"
+                 commit-remote
+                 commit-ref
+                 file-name
+                 (yankee--selected-lines 'gitlab start-line end-line)))
+       ;; BitBucket URL format
+       ((string-match-p "bitbucket.org" commit-remote)
+        (format "%s/src/%s/%s#%s"
+                 commit-remote
+                 commit-ref
+                 file-name
+                 (yankee--selected-lines 'bitbucket start-line end-line))))))
+
+(defun yankee--remote-url-git (remote-name)
+  "Using Git, return the url for the remote named REMOTE-NAME."
+  (shell-command-to-string
+   (format "git remote -v |\
+     grep %s |\
+     awk '/fetch/{print $2}' |\
+     sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@' -e 's/\.git$//'" remote-name)))
+
+(defun yankee--current-commit-remote ()
+  "The current commit's remote URL, if under version control with a remote set.
+Currently only supports Git and remotes named `origin`. TODO: Use a prompt when multiple remotes found."
+  (when (eq 'Git (vc-backend (buffer-file-name)))
+    (let ((remote-url (replace-regexp-in-string
+                       "\n$" ""
+                       (yankee--remote-url-git "origin"))))
+      (and (string-match-p "http" remote-url) remote-url))))
+
+(defun yankee--list-dirty-files-git ()
+  "Using Git, list the repository's currently dirty files.
+Includes files with modifications and new files not yet in the index."
+  (replace-regexp-in-string
+   "\n\\'" ""
+   (shell-command-to-string
+    "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
 
 (provide 'yankee)
 ;;; yankee.el ends here
