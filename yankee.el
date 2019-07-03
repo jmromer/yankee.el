@@ -3,7 +3,7 @@
 ;; Copyright (C) 2019 Jake Romer
 
 ;; Author: Jake Romer <mail@jakeromer.com>
-;; Package-Version: 0.1.2
+;; Package-Version: 0.2.0
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
 ;; URL: https://github.com/jmromer/yankee.el
 ;; Package-Requires: ((copy-as-format "0.0.8") (emacs "24.4"))
@@ -35,12 +35,12 @@
 Prompt for output format."
   (interactive "r")
 
-  (defvar end-linenum)
   (defvar file-name)
   (defvar mode-atom)
   (defvar mode-string)
   (defvar selection-range)
   (defvar start-linenum)
+  (defvar end-linenum)
 
   (setq file-name (yankee--abbreviated-project-or-home-path-to-file)
         mode-name (buffer-local-value 'major-mode (current-buffer)))
@@ -103,7 +103,8 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
 (defun yankee-copy-as-format--github-folded (text multiline)
   "Create a foldable GFM code block with TEXT as body.
 MULTILINE is a boolean indicating if the selected text spans multiple lines."
-  (let ((summary (read-string "Summary: ")))
+  (let* ((file-path (yankee--abbreviated-project-or-home-path-to-file))
+         (summary (read-string "Summary: " file-path)))
     (if multiline
         (format "<details>\n<summary>%s</summary>\n\n```%s\n%s\n```\n%s</details>\n"
                 summary
@@ -134,7 +135,7 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
     (defvar commit-hash)
     (defvar snippet-url)
 
-    (setq commit-hash (yankee--current-commit-ref start-linenum end-linenum))
+    (setq commit-hash (yankee--current-commit-ref))
     (setq snippet-url (and commit-hash
                         (yankee--code-snippet-url
                          (yankee--current-commit-remote)
@@ -225,30 +226,30 @@ line with the left-most text."
           (trim-leading-chars-and-join start-index all-lines)))
     trimmed-text))
 
-(defun yankee--current-commit-ref (start end)
-  "The most recent commit for the region bounded by line numbers START and END.
-If not under version control or uncommitted changes exist in the region, return
+(defun yankee--current-commit-ref ()
+  "The most recent commit for the file.
+If not under version control or uncommitted changes exist in the file, return
 nil. Currently only supports Git and git-timemachine mode."
   (cond
    ((bound-and-true-p git-timemachine-mode)
     (yankee--current-commit-ref-git-timemachine))
    ((eq 'Git (vc-backend (buffer-file-name)))
-    (yankee--current-commit-ref-git start end))))
+    (yankee--current-commit-ref-git))))
 
 (defun yankee--current-commit-ref-git-timemachine ()
   "Return the current commit's ref."
   (substring (git-timemachine-kill-revision) 0 8))
 
-(defun yankee--current-commit-ref-git (start end)
-  "Using Git, return the latest ref in region bounded by START and END.
-If dirty or untracked, return 'uncommitted'."
+(defun yankee--current-commit-ref-git ()
+  "Using Git, return the latest commit ref in the file.
+If dirty or untracked, return nil."
   (let* ((filename (or (buffer-file-name) ""))
          (commit-ref (replace-regexp-in-string
                       "\n\\'" ""
                       (shell-command-to-string
-                       (format "git blame -L%s,%s -- %s | sort -k3 | head -1 | awk '{ print $1 }'"
-                               start end filename)))))
-    (unless (string-match-p "^0+$" commit-ref)
+                       (format "git rev-list -1 HEAD %s" filename)))))
+    (when (not (member (yankee--abbreviated-project-or-home-path-to-file)
+                       (yankee--list-dirty-files-git)))
       (substring commit-ref 0 8))))
 
 (defun yankee--mode-string (modename)
@@ -331,10 +332,11 @@ Currently only supports Git and remotes named `origin`. TODO: Use a prompt when 
 (defun yankee--list-dirty-files-git ()
   "Using Git, list the repository's currently dirty files.
 Includes files with modifications and new files not yet in the index."
-  (replace-regexp-in-string
-   "\n\\'" ""
-   (shell-command-to-string
-    "git status --porcelain --ignore-submodules | awk '{ print $2 }'")))
+  (split-string
+   (replace-regexp-in-string
+    "\n\\'" ""
+    (shell-command-to-string
+     "git status --porcelain --ignore-submodules | awk '{ print $2 }'"))))
 
 (provide 'yankee)
 ;;; yankee.el ends here
