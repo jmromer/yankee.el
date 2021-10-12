@@ -95,7 +95,7 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
                 (copy-as-format--language)
                 text
                 (if (and (boundp 'snippet-url) snippet-url)
-                    (format "<sup>[[source](%s)]</sup>\n" snippet-url)
+                    (format "<sub>[[source](%s)]</sub>\n" snippet-url)
                   ""))
       (copy-as-format--inline-markdown text))))
 
@@ -111,7 +111,7 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
                 (copy-as-format--language)
                 text
                 (if (and (boundp 'snippet-url) snippet-url)
-                    (format "<sup>[[source](%s)]</sup>\n" snippet-url)
+                    (format "<sub>[[source](%s)]</sub>\n" snippet-url)
                   ""))
       (copy-as-format--inline-markdown text))))
 
