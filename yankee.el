@@ -6,7 +6,7 @@
 ;; Package-Version: 0.2.0
 ;; Keywords: lisp, markdown, github-flavored markdown, org-mode
 ;; URL: https://github.com/jmromer/yankee.el
-;; Package-Requires: ((copy-as-format "0.0.8") (emacs "24.4"))
+;; Package-Requires: ((copy-as-format "0.0.8") (emacs "27.1"))
 
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -159,30 +159,36 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
           (setq end (1- end)))
 
         ;; Let's trim unnecessary leading space from the region
-        (setq text (buffer-substring-no-properties (region-beginning) end))
+        (let* ((text (buffer-substring-no-properties (region-beginning) end))
+               (commit-hash-str (if commit-hash (format "(%s)" commit-hash) ""))
+               (info-line (format "%s %s %s" file-name selection-range commit-hash-str)))
+          (with-temp-buffer
+            ;; Enable the source buffer's major-mode in the temp buffer.
+            ;; Avoid rjsx-mode because it takes long to load, which creates a
+            ;; race condition with `comment-region'.
+            (funcall (if (eq mode-atom 'rjsx-mode) 'js-mode mode-atom))
 
-        (with-temp-buffer
-          ;; insert informative comment line
-          (funcall mode-atom)
-          (insert file-name " " selection-range " "
-                  (if (not commit-hash) "" (format "(%s)" commit-hash)))
-          (comment-or-uncomment-region (line-beginning-position) (line-end-position))
-          (insert "\n\n")
+            (insert info-line)
+            (comment-region (point-min) (point-max))
+            (goto-char (point-max))
+            (insert "\n\n")
 
-          (insert (yankee--clean-leading-whitepace text))
-          (goto-char (point-min))
-          ;; The length of the match (see below) determines how much leading
-          ;; space to trim.
-          ;; Without this only one space would be trimmed for each tab
-          (untabify (point-min) (point-max))
-          (while (search-forward-regexp "^\\([[:space:]]*\\)[^[:space:]]" nil t)
-            (setq n (length (match-string 1)))
-            (when (or (null min) (< n min))
-              (setq min n)))
+            ;; trim leading whitespace so the code listing renders well excerpted
+            (insert (yankee--clean-leading-whitepace text))
 
-          (when (and (not (null min)) (> min 0))
-            (indent-rigidly 1 (point-max) (- min)))
-          (buffer-string))))))
+            (goto-char (point-min))
+            ;; The length of the match (see below) determines how much leading
+            ;; space to trim.
+            ;; Without this only one space would be trimmed for each tab
+            (untabify (point-min) (point-max))
+            (while (search-forward-regexp "^\\([[:space:]]*\\)[^[:space:]]" nil t)
+              (setq n (length (match-string 1)))
+              (when (or (null min) (< n min))
+                (setq min n)))
+
+            (when (and (not (null min)) (> min 0))
+              (indent-rigidly 1 (point-max) (- min)))
+            (buffer-string)))))))
 
 ;; Utility yankee functions
 (defun yankee--abbreviated-project-or-home-path-to-file ()
