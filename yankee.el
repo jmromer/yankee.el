@@ -104,7 +104,7 @@ MULTILINE is a boolean indicating if the selected text spans multiple lines."
   "Create a foldable GFM code block with TEXT as body.
 MULTILINE is a boolean indicating if the selected text spans multiple lines."
   (let* ((file-path (yankee--abbreviated-project-or-home-path-to-file))
-         (summary (read-string "Summary: " file-path)))
+         (summary (read-string "Summary: " (format "<code>%s</code>" file-path))))
     (if multiline
         (format "<details>\n<summary>%s</summary>\n\n```%s\n%s\n```\n%s</details>\n"
                 summary
